@@ -13,7 +13,10 @@ object NotificationScheduler {
 
         WorkManager.getInstance(context).enqueue(request)
     }
-
+    fun cancelDailySummary(context: Context) {
+        val workManager = WorkManager.getInstance(context)
+        workManager.cancelAllWorkByTag("daily_summary")
+    }
     fun scheduleDailySummary(context: Context) {
         val now = Calendar.getInstance()
         val target = Calendar.getInstance().apply {

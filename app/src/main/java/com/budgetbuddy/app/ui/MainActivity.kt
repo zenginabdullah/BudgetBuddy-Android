@@ -13,8 +13,10 @@ import androidx.activity.compose.setContent // Compose UI’yi başlatmak için
 import androidx.core.app.ActivityCompat // İzin istemek için
 import androidx.core.content.ContextCompat // İzin kontrolü için
 import androidx.compose.material3.* // Material 3 UI bileşenleri
+import androidx.compose.runtime.remember
 import androidx.lifecycle.lifecycleScope // Yaşam döngüsüne bağlı coroutine başlatmak için
 import androidx.navigation.compose.rememberNavController // Navigation controller
+import com.budgetbuddy.app.data.PreferencesManager
 
 // Projedeki özel sınıflar
 import com.budgetbuddy.app.ui.navigation.AppNavHost // Sayfa geçişlerini yöneten yapı
@@ -24,6 +26,13 @@ import com.budgetbuddy.app.util.NetworkConnectivityObserver // Ağ bağlantı du
 
 // Coroutine başlatmak için
 import kotlinx.coroutines.launch
+
+import androidx.compose.runtime.*
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+
+import androidx.compose.ui.platform.LocalContext
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -62,12 +71,47 @@ class MainActivity : ComponentActivity() {
 
         // Uygulamanın UI'sını başlat
         setContent {
-            BudgetBuddyTheme { // Tema ile UI’yı sar
-                val navController = rememberNavController() // Navigation controller
-                Surface { // Ana arka plan yüzeyi
-                    AppNavHost(navController = navController) // Sayfalar arası geçiş yöneticisi
+            val context = LocalContext.current
+            val prefs = remember { PreferencesManager(context) }
+
+            var isDark by remember { mutableStateOf(prefs.isDarkModeEnabled()) }
+            var currency by remember { mutableStateOf(prefs.getCurrency()) }
+
+            var notificationsEnabled by remember { mutableStateOf(prefs.areNotificationsEnabled()) }
+
+            BudgetBuddyTheme(darkTheme = isDark) {
+                val navController = rememberNavController()
+                Surface {
+                    AppNavHost(
+                        navController = navController,
+                        currency = currency,
+                        isDark = isDark,
+                        notificationsEnabled = notificationsEnabled,
+                        onThemeToggle = { newTheme ->
+                            isDark = newTheme
+                            prefs.setDarkModeEnabled(newTheme)
+                        },
+                        onCurrencyChange = { newCurrency ->
+                            currency = newCurrency
+                            prefs.setCurrency(newCurrency)
+                        },
+                        onNotificationsToggle = { isEnabled ->
+                            notificationsEnabled = isEnabled
+                            prefs.setNotificationsEnabled(isEnabled)
+
+                            if (isEnabled) {
+                                NotificationScheduler.scheduleDailySummary(applicationContext)
+                            } else {
+                                NotificationScheduler.cancelDailySummary(applicationContext)
+                            }
+                        }
+                    )
+
                 }
             }
         }
+
     }
 }
+
+
