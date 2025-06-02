@@ -25,6 +25,9 @@ import com.budgetbuddy.app.util.NetworkConnectivityObserver // Ağ bağlantı du
 // Coroutine başlatmak için
 import kotlinx.coroutines.launch
 
+import dagger.hilt.android.AndroidEntryPoint
+
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

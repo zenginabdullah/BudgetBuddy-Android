@@ -12,6 +12,11 @@ import androidx.navigation.NavHostController // Navigation'u yönetecek controll
 import androidx.navigation.compose.NavHost // Navigation sisteminin iskeleti
 import androidx.navigation.compose.composable // Her sayfa için route tanımlamaya yarar
 
+import com.budgetbuddy.app.viewmodel.ExpenseViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.budgetbuddy.app.viewmodel.IncomeViewModel
+
 @Composable
 fun AppNavHost(navController: NavHostController) {
     // Navigation sistemini başlatıyoruz, başlangıç sayfası "home"
@@ -19,16 +24,30 @@ fun AppNavHost(navController: NavHostController) {
 
         // Ana ekran rotası
         composable("home") {
+            val expenseViewModel: ExpenseViewModel = hiltViewModel()
+            val incomeViewModel: IncomeViewModel = hiltViewModel()
             HomeScreen(
-                onAddExpenseClick = { navController.navigate("add_expense") }, // Gider sayfasına git
-                onAddIncomeClick = { navController.navigate("add_income") },   // Gelir sayfasına git
-                onHistoryClick = { navController.navigate("history") }         // Geçmiş sayfasına git
+                expenseViewModel = expenseViewModel,
+                incomeViewModel = incomeViewModel,
+                onAddExpenseClick = { navController.navigate("add_expense") },
+                onAddIncomeClick = { navController.navigate("add_income") },
+                onHistoryClick = { navController.navigate("history") }
             )
         }
 
         // Diğer ekranların rotaları
-        composable("add_expense") { AddExpenseScreen() }
-        composable("add_income") { AddIncomeScreen() }
-        composable("history") { HistoryScreen() }
+        composable("add_expense") {
+            val viewModel: ExpenseViewModel = hiltViewModel()
+            AddExpenseScreen(viewModel = viewModel)
+        }
+        composable("add_income") {
+            val viewModel: IncomeViewModel = hiltViewModel()
+            AddIncomeScreen(viewModel = viewModel)
+        }
+        composable("history") {
+            val viewModel: ExpenseViewModel = hiltViewModel()
+            val incomeViewModel: IncomeViewModel = hiltViewModel()
+            HistoryScreen(viewModel = viewModel, incomeViewModel = incomeViewModel)
+        }
     }
 }
