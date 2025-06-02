@@ -1,31 +1,63 @@
-package com.budgetbuddy.app.ui // Ana Activity'nin bulunduğu paket
+package com.budgetbuddy.app.ui
 
-// Android ve Compose bileşenlerini içe aktarıyoruz
+// Android bileşenleri
 import android.os.Bundle
-import androidx.activity.ComponentActivity // Activity'nin temel sınıfı
-import androidx.activity.compose.setContent // Compose ekranlarını göstermeye yarar
-import androidx.compose.material3.* // Material 3 bileşenleri (tema, buton vs.)
-import androidx.navigation.compose.rememberNavController // Navigation için controller oluşturur
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.material3.*
+import androidx.navigation.compose.rememberNavController
 
-// Navigation grafiğimizi (ekran geçişlerini) getiriyoruz
+// Tema ve navigation
 import com.budgetbuddy.app.ui.navigation.AppNavHost
-
-// Temamızı getiriyoruz (renkler, yazı tipi vs.)
 import com.budgetbuddy.app.ui.theme.BudgetBuddyTheme
+
+// 🚨 Yeni eklenen import: Lokasyon uyarı yöneticisi
+import com.budgetbuddy.app.sensors.LocationAlertManager
+import android.Manifest
+import androidx.core.app.ActivityCompat
+import android.content.pm.PackageManager
+import android.util.Log
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                1001
+            )
+        }
         super.onCreate(savedInstanceState)
 
-        // Uygulama başlatıldığında Compose UI'yı göster
-        setContent {
-            BudgetBuddyTheme { // Tema ile uygulamayı sar
-                val navController = rememberNavController() // Navigation controller'ı oluştur
+        // 📌 Lokasyon kontrolünü başlat!
+        LocationAlertManager(this).startLocationCheck()
 
-                Surface { // Arka plan yüzeyi (Material)
-                    AppNavHost(navController = navController) // Navigation başlat
+        setContent {
+            BudgetBuddyTheme {
+                val navController = rememberNavController()
+                Surface {
+                    AppNavHost(navController = navController)
                 }
             }
+        }
+    }
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        if (requestCode == 1001 &&
+            grantResults.isNotEmpty() &&
+            grantResults[0] == PackageManager.PERMISSION_GRANTED
+        ) {
+            // Log.d("LocationDebug", "Konum izni verildi.")
+            LocationAlertManager(this).startLocationCheck()
+        } else {
+            // Log.d("LocationDebug", "Konum izni reddedildi.")
         }
     }
 }
