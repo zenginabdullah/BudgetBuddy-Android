@@ -6,8 +6,11 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
-    <!-- 🔔 Android 13+ için bildirim izni -->
+    <!-- 🔔 Bildirim izni (Android 13+) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- 🌐 Ağ bağlantı kontrolü için izin -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
         android:allowBackup="true"
@@ -19,6 +22,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.BudgetBuddy"
         tools:targetApi="31">
+
+        <!-- 🛠️ WorkManager arka plan servisi -->
+        <service
+            android:name="androidx.work.impl.background.systemjob.SystemJobService"
+            android:permission="android.permission.BIND_JOB_SERVICE"
+            android:exported="true" />
 
         <activity
             android:name="com.budgetbuddy.app.ui.MainActivity"
