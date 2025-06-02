@@ -1,19 +1,13 @@
 package com.budgetbuddy.app.ui.navigation
 
-import com.budgetbuddy.app.ui.screens.AddExpenseScreen
-import com.budgetbuddy.app.ui.screens.AddIncomeScreen
-import com.budgetbuddy.app.ui.screens.HistoryScreen
-import com.budgetbuddy.app.ui.screens.HomeScreen
-import com.budgetbuddy.app.ui.screens.LoginScreen
-import com.budgetbuddy.app.ui.screens.SignupScreen
-import com.budgetbuddy.app.ui.screens.SettingsScreen
-
 import androidx.compose.runtime.Composable
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.budgetbuddy.app.ui.screens.LoginScreenWrapper
-import com.budgetbuddy.app.ui.screens.SignupScreenWrapper
+import com.budgetbuddy.app.ui.screens.*
+import com.budgetbuddy.app.viewmodel.ExpenseViewModel
+import com.budgetbuddy.app.viewmodel.IncomeViewModel
 
 @Composable
 fun AppNavHost(
@@ -50,8 +44,12 @@ fun AppNavHost(
         }
 
         composable("home") {
+            val expenseViewModel: ExpenseViewModel = hiltViewModel()
+            val incomeViewModel: IncomeViewModel = hiltViewModel()
             HomeScreen(
                 currencySymbol = currency,
+                expenseViewModel = expenseViewModel,
+                incomeViewModel = incomeViewModel,
                 onAddExpenseClick = { navController.navigate("add_expense") },
                 onAddIncomeClick = { navController.navigate("add_income") },
                 onHistoryClick = { navController.navigate("history") },
@@ -59,9 +57,22 @@ fun AppNavHost(
             )
         }
 
-        composable("add_expense") { AddExpenseScreen() }
-        composable("add_income") { AddIncomeScreen() }
-        composable("history") { HistoryScreen() }
+        composable("add_expense") {
+            val viewModel: ExpenseViewModel = hiltViewModel()
+            AddExpenseScreen(viewModel = viewModel)
+        }
+
+        composable("add_income") {
+            val viewModel: IncomeViewModel = hiltViewModel()
+            AddIncomeScreen(viewModel = viewModel)
+        }
+
+        composable("history") {
+            val expenseViewModel: ExpenseViewModel = hiltViewModel()
+            val incomeViewModel: IncomeViewModel = hiltViewModel()
+            HistoryScreen(viewModel = expenseViewModel, incomeViewModel = incomeViewModel)
+        }
+
         composable("settings") {
             SettingsScreen(
                 currency = currency,

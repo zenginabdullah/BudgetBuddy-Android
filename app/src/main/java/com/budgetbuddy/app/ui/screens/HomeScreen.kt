@@ -1,5 +1,3 @@
-// Ana ekran - Kullanıcının gelir, gider ve bakiye özetini gösterir
-
 package com.budgetbuddy.app.ui.screens
 
 import androidx.compose.foundation.layout.*
@@ -7,55 +5,54 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.MoneyOff
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.platform.LocalContext
+import com.budgetbuddy.app.viewmodel.ExpenseViewModel
+import com.budgetbuddy.app.viewmodel.IncomeViewModel
 import com.budgetbuddy.app.data.PreferencesManager
 
 @Composable
 fun HomeScreen(
-    totalIncome: Double = 5000.0,
-    totalExpense: Double = 2750.0,
-    currencySymbol: String = "₺",
+    expenseViewModel: ExpenseViewModel,
+    incomeViewModel: IncomeViewModel,
+    currencySymbol: String,
     onAddExpenseClick: () -> Unit,
     onAddIncomeClick: () -> Unit,
     onHistoryClick: () -> Unit,
     onSettingsClick: () -> Unit
 ) {
-    val balance = totalIncome - totalExpense // Kalan bakiye hesaplama
+    val totalExpense by expenseViewModel.totalExpense.collectAsState()
+    val totalIncome by incomeViewModel.totalIncome.collectAsState()
+    val balance = totalIncome - totalExpense
 
     val context = LocalContext.current
     val prefs = PreferencesManager(context)
-    //SharedPreferences testi
-    LaunchedEffect(Unit) {
-        prefs.setCurrency("₺")
-        prefs.setDarkModeEnabled(true)
-        prefs.setNotificationsEnabled(false)
 
+    // 🧪 SharedPreferences test logları (isteğe bağlı kaldırılabilir)
+    LaunchedEffect(Unit) {
         android.util.Log.d("PrefsTest", "Currency: ${prefs.getCurrency()}")
         android.util.Log.d("PrefsTest", "DarkMode: ${prefs.isDarkModeEnabled()}")
         android.util.Log.d("PrefsTest", "Notifications: ${prefs.areNotificationsEnabled()}")
     }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
-        // Sayfa başlığı
         Text(
             text = "📊 Bütçe Özeti",
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold
         )
 
-        // Bütçe kartı: gelir, gider, kalan bakiye
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
@@ -70,7 +67,6 @@ fun HomeScreen(
             }
         }
 
-        // Eylem butonları: Gelir, Gider, Geçmiş
         Column(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.fillMaxWidth()
@@ -99,7 +95,7 @@ fun HomeScreen(
             ) {
                 Text("📜 Geçmiş Kayıtlar")
             }
-            //Ayarlar butonu
+
             Button(
                 onClick = onSettingsClick,
                 modifier = Modifier.fillMaxWidth()
@@ -110,7 +106,6 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.weight(1f))
 
-        // Uyarı yazısı
         Text(
             text = "🔔 Harcama limiti yaklaşmakta!",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -120,7 +115,6 @@ fun HomeScreen(
     }
 }
 
-// Özet satırı: başlık ve değer
 @Composable
 fun SummaryRow(title: String, value: String, color: Color) {
     Row(

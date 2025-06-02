@@ -1,143 +1,215 @@
-// Geçmiş işlemleri listeleyen ekran
-
 package com.budgetbuddy.app.ui.screens
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import java.util.*
-
-data class Transaction(
-    val type: String, // "Gelir" ya da "Gider"
-    val category: String,
-    val amount: Double,
-    val date: String
-)
+import com.budgetbuddy.app.data.local.entity.ExpenseEntity
+import com.budgetbuddy.app.viewmodel.ExpenseViewModel
+import androidx.compose.foundation.layout.FlowRow
+import com.budgetbuddy.app.viewmodel.IncomeViewModel
+import com.budgetbuddy.app.data.local.entity.IncomeEntity
 
 @Composable
-fun HistoryScreen() {
-    // Örnek veri seti
-    val allTransactions = remember {
-        listOf(
-            Transaction("Gelir", "Maaş", 5000.0, "01.05.2025"),
-            Transaction("Gider", "Gıda", 150.0, "02.05.2025"),
-            Transaction("Gider", "Ulaşım", 60.0, "03.05.2025"),
-            Transaction("Gelir", "Yatırım", 800.0, "05.05.2025"),
-            Transaction("Gider", "Fatura", 250.0, "06.05.2025")
-        )
-    }
+fun HistoryScreen(viewModel: ExpenseViewModel,
+                  incomeViewModel: IncomeViewModel) {
+    val expenses by viewModel.filteredExpenses.collectAsState()
+    val selectedCategory by viewModel.selectedCategory.collectAsState()
+    val total by viewModel.totalExpense.collectAsState()
 
-    // Filtreler
-    var selectedType by remember { mutableStateOf("Hepsi") }
-    var selectedCategory by remember { mutableStateOf("Tümü") }
+    val incomes by incomeViewModel.incomeList.collectAsState()
+    val filteredIncomes by incomeViewModel.filteredIncomes.collectAsState()
 
-    val types = listOf("Hepsi", "Gelir", "Gider")
-    val categories = listOf("Tümü") + allTransactions.map { it.category }.distinct()
-
-    // Filtrelenmiş liste
-    val filteredTransactions = allTransactions.filter {
-        (selectedType == "Hepsi" || it.type == selectedType) &&
-                (selectedCategory == "Tümü" || it.category == selectedCategory)
-    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // Tür ve Kategori filtre menüleri
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            DropdownSelector(
-                label = "Tür",
-                options = types,
-                selected = selectedType,
-                onSelected = { selectedType = it },
-                modifier = Modifier.weight(1f)
-            )
+        SummaryCard(
+            totalIncome = viewModel.totalIncome.collectAsState().value,
+            totalExpense = viewModel.totalExpense.collectAsState().value
+        )
 
-            DropdownSelector(
-                label = "Kategori",
-                options = categories,
-                selected = selectedCategory,
-                onSelected = { selectedCategory = it },
-                modifier = Modifier.weight(1f)
-            )
-        }
+        CategoryFilterRow(
+            selectedCategory = selectedCategory,
+            onCategorySelected = {
+                viewModel.setCategoryFilter(it)
+                incomeViewModel.setCategoryFilter(it)
+            }
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Listeleme
         LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            items(filteredTransactions) { txn ->
-                TransactionItem(txn)
+            items(expenses) { expense ->
+                ExpenseCard(
+                    expense = expense,
+                    onDeleteClick = { viewModel.deleteExpense(expense) }
+                )
             }
-        }
-    }
-}
-
-// Dropdown menü bileşeni (filtre için)
-@Composable
-fun DropdownSelector(
-    label: String,
-    options: List<String>,
-    selected: String,
-    onSelected: (String) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    var expanded by remember { mutableStateOf(false) }
-
-    Box(modifier = modifier) {
-        OutlinedTextField(
-            value = selected,
-            onValueChange = {},
-            label = { Text(label) },
-            readOnly = true,
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { expanded = true }
-        )
-
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
-        ) {
-            options.forEach { option ->
-                DropdownMenuItem(
-                    text = { Text(option) },
-                    onClick = {
-                        onSelected(option)
-                        expanded = false
-                    }
+            items(filteredIncomes) { income ->
+                IncomeCard(
+                    income = income,
+                    onDeleteClick = { incomeViewModel.deleteIncome(income) }
                 )
             }
         }
     }
 }
 
-// Her işlem için gösterilecek kart
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun TransactionItem(transaction: Transaction) {
+fun CategoryFilterRow(
+    selectedCategory: String?,
+    onCategorySelected: (String?) -> Unit
+) {
+    val categories = listOf("Tümü", "Gıda", "Ulaşım", "Eğlence", "Eğitim", "Fatura")
+
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        categories.forEach { category ->
+            val isSelected = selectedCategory == category || (category == "Tümü" && selectedCategory == null)
+
+            FilterChip(
+                selected = isSelected,
+                onClick = { onCategorySelected(category.takeIf { it != "Tümü" }) },
+                label = { Text(category) }
+            )
+        }
+    }
+}
+@Composable
+fun SummaryCard(
+    totalIncome: Double,
+    totalExpense: Double,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(bottom = 16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        ),
+        elevation = CardDefaults.cardElevation(4.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "Özet",
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Text("Gelir", style = MaterialTheme.typography.labelMedium)
+                    Text(
+                        "₺%.2f".format(totalIncome),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = Color(0xFF388E3C) // Yeşil
+                    )
+                }
+
+                Column {
+                    Text("Gider", style = MaterialTheme.typography.labelMedium)
+                    Text(
+                        "₺%.2f".format(totalExpense),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = Color(0xFFD32F2F) // Kırmızı
+                    )
+                }
+
+                Column {
+                    Text("Net", style = MaterialTheme.typography.labelMedium)
+                    Text(
+                        "₺%.2f".format(totalIncome - totalExpense),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ExpenseCard(expense: ExpenseEntity, onDeleteClick: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = if (transaction.type == "Gelir")
-                MaterialTheme.colorScheme.primaryContainer
-            else
-                MaterialTheme.colorScheme.errorContainer
+            containerColor = MaterialTheme.colorScheme.secondaryContainer
         )
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = "${transaction.type} - ${transaction.category}")
-            Text(text = "₺%.2f".format(transaction.amount), style = MaterialTheme.typography.bodyLarge)
-            Text(text = transaction.date, style = MaterialTheme.typography.bodySmall)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(expense.category, style = MaterialTheme.typography.titleMedium)
+                Text("₺%.2f".format(expense.amount), style = MaterialTheme.typography.bodyLarge)
+                Text(expense.date, style = MaterialTheme.typography.bodySmall)
+                if (expense.description.isNotBlank()) {
+                    Text(expense.description, style = MaterialTheme.typography.bodySmall)
+                }
+            }
+
+            IconButton(onClick = onDeleteClick) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Sil",
+                    tint = Color.Red
+                )
+            }
+        }
+    }
+}
+@Composable
+fun IncomeCard(income: IncomeEntity, onDeleteClick: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(income.category, style = MaterialTheme.typography.titleMedium)
+                Text("₺%.2f".format(income.amount), style = MaterialTheme.typography.bodyLarge)
+                Text(income.date, style = MaterialTheme.typography.bodySmall)
+                if (income.description.isNotBlank()) {
+                    Text(income.description, style = MaterialTheme.typography.bodySmall)
+                }
+            }
+
+            IconButton(onClick = onDeleteClick) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Sil",
+                    tint = Color.Red
+                )
+            }
         }
     }
 }

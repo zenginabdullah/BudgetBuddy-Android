@@ -1,4 +1,3 @@
-// Gelir ekleme ekranı
 package com.budgetbuddy.app.ui.screens
 
 import android.widget.Toast
@@ -10,31 +9,34 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import com.budgetbuddy.app.ui.CategoryPicker
+import com.budgetbuddy.app.ui.components.DropdownMenuBox
+import com.budgetbuddy.app.viewmodel.IncomeViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 
 @Composable
-fun AddIncomeScreen() {
+fun AddIncomeScreen(viewModel: IncomeViewModel) {
     val context = LocalContext.current
 
-    // Kullanıcıdan alınan veriler
     var amount by remember { mutableStateOf("") }
     var category by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     val date = remember { SimpleDateFormat("dd.MM.yyyy", Locale.getDefault()).format(Date()) }
 
-    val incomeCategories = listOf("Maaş", "Prim", "Ek İş", "Yatırım", "Diğer")
+
+    val categoryOptions = listOf("Gıda", "Ulaşım", "Eğlence", "Eğitim", "Fatura")
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(horizontal = 24.dp, vertical = 32.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
-        Text("Gelir Ekle", style = MaterialTheme.typography.headlineSmall)
+        Text(
+            text = "Gelir Ekle",
+            style = MaterialTheme.typography.headlineSmall
+        )
 
-        // Tutar girişi
         OutlinedTextField(
             value = amount,
             onValueChange = { amount = it },
@@ -43,14 +45,12 @@ fun AddIncomeScreen() {
             modifier = Modifier.fillMaxWidth()
         )
 
-        // Kategori seçici bileşeni
-        CategoryPicker(
-            options = incomeCategories,
+        DropdownMenuBox(
+            options = categoryOptions,
             selectedOption = category,
             onOptionSelected = { category = it }
         )
 
-        // Açıklama
         OutlinedTextField(
             value = description,
             onValueChange = { description = it },
@@ -58,24 +58,39 @@ fun AddIncomeScreen() {
             modifier = Modifier.fillMaxWidth()
         )
 
-        // Tarih alanı şimdilik değiştirilmiyor
         OutlinedTextField(
             value = date,
             onValueChange = {},
             label = { Text("Tarih") },
-            enabled = false,
             modifier = Modifier.fillMaxWidth()
         )
 
-        // Kaydet butonu
+        Spacer(modifier = Modifier.height(8.dp))
+
         Button(
             onClick = {
-                Toast.makeText(context, "Gelir kaydedildi!", Toast.LENGTH_SHORT).show()
-                // Buraya veri kaydetme işlemi eklenecek (Room + Firebase)
+                val parsedAmount = amount.toDoubleOrNull()
+                if (parsedAmount != null && category.isNotBlank() && date.isNotBlank()) {
+                    viewModel.insertIncome(
+                        amount = parsedAmount,
+                        category = category,
+                        date = date,
+                        description = description
+                    )
+                    Toast.makeText(context, "Gelir kaydedildi!", Toast.LENGTH_SHORT).show()
+
+                    // Alanları sıfırla
+                    amount = ""
+                    category = ""
+                    description = ""
+                } else {
+                    Toast.makeText(context, "Lütfen tüm alanları doğru şekilde doldurun.", Toast.LENGTH_SHORT).show()
+                }
             },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Kaydet")
         }
+
     }
 }

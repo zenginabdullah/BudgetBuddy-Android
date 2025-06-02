@@ -11,11 +11,12 @@ import androidx.compose.ui.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.budgetbuddy.app.viewmodel.ExpenseViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 
 @Composable
-fun AddExpenseScreen() {
+fun AddExpenseScreen(viewModel: ExpenseViewModel) {
     val context = LocalContext.current
 
     // Kullanıcıdan alınan veriler
@@ -58,20 +59,28 @@ fun AddExpenseScreen() {
             modifier = Modifier.fillMaxWidth()
         )
 
-        // Tarih alanı değiştirilmiyor (şimdilik)
+        // Tarih alanı
         OutlinedTextField(
             value = date,
             onValueChange = {},
             label = { Text("Tarih") },
-            enabled = false,
             modifier = Modifier.fillMaxWidth()
         )
 
-        // Kaydet butonu (şu anlık Toast gösteriyor)
+        // Kaydet butonu
         Button(
             onClick = {
-                Toast.makeText(context, "Harcama kaydedildi!", Toast.LENGTH_SHORT).show()
-                // Burada veritabanı ve/veya API entegrasyonu olacak
+                if (amount.isNotBlank() && category.isNotBlank()) {
+                    viewModel.insertExpense(
+                        amount = amount.toDoubleOrNull() ?: 0.0,
+                        category = category,
+                        description = description,
+                        date = date
+                    )
+                    Toast.makeText(context, "Harcama kaydedildi!", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(context, "Lütfen tüm alanları doldurun", Toast.LENGTH_SHORT).show()
+                }
             },
             modifier = Modifier.fillMaxWidth()
         ) {
