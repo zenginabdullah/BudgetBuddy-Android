@@ -12,6 +12,8 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.budgetbuddy.app.ui.screens.LoginScreenWrapper
+import com.budgetbuddy.app.ui.screens.SignupScreenWrapper
 
 @Composable
 fun AppNavHost(
@@ -26,9 +28,8 @@ fun AppNavHost(
     NavHost(navController = navController, startDestination = "login") {
 
         composable("login") {
-            LoginScreen(
-                onLoginClick = { email, password ->
-                    // Firebase auth işlemleri buraya gelecek
+            LoginScreenWrapper(
+                onLoginSuccess = {
                     navController.navigate("home") {
                         popUpTo("login") { inclusive = true }
                     }
@@ -38,9 +39,8 @@ fun AppNavHost(
         }
 
         composable("signup") {
-            SignupScreen(
-                onSignupClick = { email, password ->
-                    // Firebase auth işlemleri buraya gelecek
+            SignupScreenWrapper(
+                onSignupSuccess = {
                     navController.navigate("login") {
                         popUpTo("signup") { inclusive = true }
                     }
