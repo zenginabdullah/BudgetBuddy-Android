@@ -22,9 +22,8 @@ fun AppNavHost(
     NavHost(navController = navController, startDestination = "login") {
 
         composable("login") {
-            LoginScreen(
-                onLoginClick = { email, password ->
-                    // TODO: Firebase auth işlemleri burada yapılacak
+            LoginScreenWrapper(
+                onLoginSuccess = {
                     navController.navigate("home") {
                         popUpTo("login") { inclusive = true }
                     }
@@ -34,9 +33,8 @@ fun AppNavHost(
         }
 
         composable("signup") {
-            SignupScreen(
-                onSignupClick = { email, password ->
-                    // TODO: Firebase auth işlemleri burada yapılacak
+            SignupScreenWrapper(
+                onSignupSuccess = {
                     navController.navigate("login") {
                         popUpTo("signup") { inclusive = true }
                     }
