@@ -1,82 +1,77 @@
-package com.budgetbuddy.app.ui // Ana Activity'nin bulunduğu paket
+package com.budgetbuddy.app.ui
 
-// Android temel bileşenleri
-import android.Manifest // Bildirim izni için gerekli sabit
-import android.content.pm.PackageManager // İzin kontrolü için
-import android.os.Build // Sürüm kontrolü için
-import android.os.Bundle // Activity yaşam döngüsü
-import android.util.Log // Loglama (bağlantı durumu vs.)
-
-// Compose ve Navigation bileşenleri
-import androidx.activity.ComponentActivity // Temel Compose tabanlı Activity
-import androidx.activity.compose.setContent // Compose UI’yi başlatmak için
-import androidx.core.app.ActivityCompat // İzin istemek için
-import androidx.core.content.ContextCompat // İzin kontrolü için
-import androidx.compose.material3.* // Material 3 UI bileşenleri
-import androidx.compose.runtime.remember
-import androidx.lifecycle.lifecycleScope // Yaşam döngüsüne bağlı coroutine başlatmak için
-import androidx.navigation.compose.rememberNavController // Navigation controller
-import com.budgetbuddy.app.data.PreferencesManager
-
-// Projedeki özel sınıflar
-import com.budgetbuddy.app.ui.navigation.AppNavHost // Sayfa geçişlerini yöneten yapı
-import com.budgetbuddy.app.ui.theme.BudgetBuddyTheme // Uygulama teması (renk, yazı vs.)
-import com.budgetbuddy.app.util.NotificationScheduler // Bildirimleri planlayan sınıf
-import com.budgetbuddy.app.util.NetworkConnectivityObserver // Ağ bağlantı durumunu izleyen sınıf
-
-// Coroutine başlatmak için
-import kotlinx.coroutines.launch
-
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import android.os.Bundle
+import android.util.Log
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
+import androidx.navigation.compose.rememberNavController
+import com.budgetbuddy.app.data.PreferencesManager
+import com.budgetbuddy.app.sensors.LocationAlertManager
+import com.budgetbuddy.app.ui.navigation.AppNavHost
+import com.budgetbuddy.app.ui.theme.BudgetBuddyTheme
+import com.budgetbuddy.app.util.NetworkConnectivityObserver
+import com.budgetbuddy.app.util.NotificationScheduler
+import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.LocalContext
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Android 13+ için bildirim izni kontrolü (POST_NOTIFICATIONS)
+        // 🔐 Konum izni kontrolü
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                1001
+            )
+        } else {
+            LocationAlertManager(this).startLocationCheck()
+        }
+
+        // 🔔 Android 13+ için bildirim izni kontrolü
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.POST_NOTIFICATIONS
-                ) != PackageManager.PERMISSION_GRANTED
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED
             ) {
-                // İzin yoksa kullanıcıdan istenir
                 ActivityCompat.requestPermissions(
                     this,
                     arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-                    1001
+                    1002
                 )
             }
         }
 
-        // 10 saniye sonra test bildirimi (çalıştığını görmek için)
+        // 📅 Bildirim planlayıcılar
         NotificationScheduler.scheduleTestNotification(applicationContext)
-
-        // Her gün saat 21:00'de harcama özeti bildirim planı
         NotificationScheduler.scheduleDailySummary(applicationContext)
 
-        // İnternet bağlantı durumunu dinle ve logla
+        // 🌐 Bağlantı durumu gözlemleyici
         val connectivityObserver = NetworkConnectivityObserver(applicationContext)
         lifecycleScope.launch {
             connectivityObserver.observe().collect { status ->
                 Log.d("Connectivity", "Durum: $status")
-                // API çağrısı burada yapılabilir (bağlantı varsa)
+                // Burada API senkronizasyonu yapılabilir
             }
         }
 
-        // Uygulamanın UI'sını başlat
+        // 🎨 UI başlat
         setContent {
             val context = LocalContext.current
             val prefs = remember { PreferencesManager(context) }
 
             var isDark by remember { mutableStateOf(prefs.isDarkModeEnabled()) }
             var currency by remember { mutableStateOf(prefs.getCurrency()) }
-
             var notificationsEnabled by remember { mutableStateOf(prefs.areNotificationsEnabled()) }
 
             BudgetBuddyTheme(darkTheme = isDark) {
@@ -106,12 +101,27 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                     )
-
                 }
             }
         }
+    }
 
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        when (requestCode) {
+            1001 -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    LocationAlertManager(this).startLocationCheck()
+                }
+            }
+            1002 -> {
+                Log.d("Permissions", "Bildirim izni verildi.")
+            }
+        }
     }
 }
-
-
