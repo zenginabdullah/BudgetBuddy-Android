@@ -1,30 +1,34 @@
-package com.budgetbuddy.app.ui.navigation // Bu dosyanın bulunduğu paket (klasör yapısına göre önemli)
+package com.budgetbuddy.app.ui.navigation
 
-// Diğer ekranları bu dosyada kullanabilmek için içe aktarıyoruz
-import com.budgetbuddy.app.ui.screens.AddExpenseScreen // Gider ekleme ekranı
-import com.budgetbuddy.app.ui.screens.AddIncomeScreen  // Gelir ekleme ekranı
-import com.budgetbuddy.app.ui.screens.HistoryScreen    // Geçmiş işlemler ekranı
-import com.budgetbuddy.app.ui.screens.HomeScreen       // Ana ekran
-import com.budgetbuddy.app.ui.screens.LoginScreen      // Giriş ekranı
-import com.budgetbuddy.app.ui.screens.SignupScreen     // Kayıt ekranı
+import com.budgetbuddy.app.ui.screens.AddExpenseScreen
+import com.budgetbuddy.app.ui.screens.AddIncomeScreen
+import com.budgetbuddy.app.ui.screens.HistoryScreen
+import com.budgetbuddy.app.ui.screens.HomeScreen
+import com.budgetbuddy.app.ui.screens.LoginScreen
+import com.budgetbuddy.app.ui.screens.SignupScreen
+import com.budgetbuddy.app.ui.screens.SettingsScreen
 
-// Jetpack Compose fonksiyonları ve navigation bileşenleri
-import androidx.compose.runtime.Composable // @Composable fonksiyon yazmamıza yarar
-import androidx.navigation.NavHostController // Navigation'u yönetecek controller
-import androidx.navigation.compose.NavHost // Navigation sisteminin iskeleti
-import androidx.navigation.compose.composable // Her sayfa için route tanımlamaya yarar
+import androidx.compose.runtime.Composable
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
 
 @Composable
-fun AppNavHost(navController: NavHostController) {
-    // Navigation sistemini başlatıyoruz, başlangıç sayfası "login"
+fun AppNavHost(
+    navController: NavHostController,
+    currency: String,
+    isDark: Boolean,
+    notificationsEnabled: Boolean,
+    onThemeToggle: (Boolean) -> Unit,
+    onCurrencyChange: (String) -> Unit,
+    onNotificationsToggle: (Boolean) -> Unit
+) {
     NavHost(navController = navController, startDestination = "login") {
 
-        // Login ekranı rotası
         composable("login") {
             LoginScreen(
                 onLoginClick = { email, password ->
                     // Firebase auth işlemleri buraya gelecek
-                    // Başarıyla giriş yapıldıysa HomeScreen'e yönlendir
                     navController.navigate("home") {
                         popUpTo("login") { inclusive = true }
                     }
@@ -33,12 +37,10 @@ fun AppNavHost(navController: NavHostController) {
             )
         }
 
-        // Signup ekranı rotası
         composable("signup") {
             SignupScreen(
                 onSignupClick = { email, password ->
                     // Firebase auth işlemleri buraya gelecek
-                    // Kayıt olduktan sonra LoginScreen'e yönlendir
                     navController.navigate("login") {
                         popUpTo("signup") { inclusive = true }
                     }
@@ -46,18 +48,29 @@ fun AppNavHost(navController: NavHostController) {
                 onNavigateToLogin = { navController.navigate("login") }
             )
         }
-        // Ana ekran rotası
+
         composable("home") {
             HomeScreen(
-                onAddExpenseClick = { navController.navigate("add_expense") }, // Gider sayfasına git
-                onAddIncomeClick = { navController.navigate("add_income") },   // Gelir sayfasına git
-                onHistoryClick = { navController.navigate("history") }         // Geçmiş sayfasına git
+                currencySymbol = currency,
+                onAddExpenseClick = { navController.navigate("add_expense") },
+                onAddIncomeClick = { navController.navigate("add_income") },
+                onHistoryClick = { navController.navigate("history") },
+                onSettingsClick = { navController.navigate("settings") }
             )
         }
 
-        // Diğer ekranların rotaları
         composable("add_expense") { AddExpenseScreen() }
         composable("add_income") { AddIncomeScreen() }
         composable("history") { HistoryScreen() }
+        composable("settings") {
+            SettingsScreen(
+                currency = currency,
+                isDark = isDark,
+                notificationsEnabled = notificationsEnabled,
+                onThemeToggle = onThemeToggle,
+                onCurrencyChange = onCurrencyChange,
+                onNotificationsToggle = onNotificationsToggle
+            )
+        }
     }
 }

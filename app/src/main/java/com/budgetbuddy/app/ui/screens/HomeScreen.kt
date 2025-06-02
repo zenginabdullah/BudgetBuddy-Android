@@ -14,17 +14,34 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
+import com.budgetbuddy.app.data.PreferencesManager
 
 @Composable
 fun HomeScreen(
     totalIncome: Double = 5000.0,
     totalExpense: Double = 2750.0,
+    currencySymbol: String = "₺",
     onAddExpenseClick: () -> Unit,
     onAddIncomeClick: () -> Unit,
-    onHistoryClick: () -> Unit
+    onHistoryClick: () -> Unit,
+    onSettingsClick: () -> Unit
 ) {
     val balance = totalIncome - totalExpense // Kalan bakiye hesaplama
 
+    val context = LocalContext.current
+    val prefs = PreferencesManager(context)
+    //SharedPreferences testi
+    LaunchedEffect(Unit) {
+        prefs.setCurrency("₺")
+        prefs.setDarkModeEnabled(true)
+        prefs.setNotificationsEnabled(false)
+
+        android.util.Log.d("PrefsTest", "Currency: ${prefs.getCurrency()}")
+        android.util.Log.d("PrefsTest", "DarkMode: ${prefs.isDarkModeEnabled()}")
+        android.util.Log.d("PrefsTest", "Notifications: ${prefs.areNotificationsEnabled()}")
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -47,9 +64,9 @@ fun HomeScreen(
                 modifier = Modifier.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                SummaryRow("Gelir", "₺%.2f".format(totalIncome), MaterialTheme.colorScheme.primary)
-                SummaryRow("Gider", "₺%.2f".format(totalExpense), MaterialTheme.colorScheme.error)
-                SummaryRow("Kalan", "₺%.2f".format(balance), MaterialTheme.colorScheme.secondary)
+                SummaryRow("Gelir", "$currencySymbol%.2f".format(totalIncome), MaterialTheme.colorScheme.primary)
+                SummaryRow("Gider", "$currencySymbol%.2f".format(totalExpense), MaterialTheme.colorScheme.error)
+                SummaryRow("Kalan", "$currencySymbol%.2f".format(balance), MaterialTheme.colorScheme.secondary)
             }
         }
 
@@ -81,6 +98,13 @@ fun HomeScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("📜 Geçmiş Kayıtlar")
+            }
+            //Ayarlar butonu
+            Button(
+                onClick = onSettingsClick,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("⚙️ Ayarlar")
             }
         }
 
