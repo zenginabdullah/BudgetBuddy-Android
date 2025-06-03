@@ -24,7 +24,7 @@ fun AddIncomeScreen(viewModel: IncomeViewModel) {
     val date = remember { SimpleDateFormat("dd.MM.yyyy", Locale.getDefault()).format(Date()) }
 
 
-    val categoryOptions = listOf("Gıda", "Ulaşım", "Eğlence", "Eğitim", "Fatura")
+    val categoryOptions = listOf("Maaş", "Serbest Çalışma", "Yatırım", "Burs", "Diğer")
 
     Column(
         modifier = Modifier
