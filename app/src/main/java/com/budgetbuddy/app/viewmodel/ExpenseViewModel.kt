@@ -35,7 +35,19 @@ class ExpenseViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     init {
-        observeExpenses()
+        // 1. Firestore’daki kayıtları çek ve Room’u güncelle
+        viewModelScope.launch {
+            repository.syncAllExpensesFromFirebase()
+        }
+
+        // 2. Room’daki güncel listeyi dinle ve StateFlow’a aktar
+        viewModelScope.launch {
+            repository.getAllExpenses().collect { list ->
+                _allExpenses.value = list
+            }
+        }
+
+        // 3. Gelir toplamını güncelleyen fonksiyon varsa, onu da çağırabilirsiniz.
         updateTotalIncome()
     }
 
@@ -58,7 +70,6 @@ class ExpenseViewModel @Inject constructor(
                     category = category,
                     description = description,
                     date = date,
-                    userId = uid
                 )
                 repository.insertExpense(expense)
                 Log.d("ExpenseViewModel", "Expense inserted: $expense")
@@ -92,5 +103,11 @@ class ExpenseViewModel @Inject constructor(
             expenses = _allExpenses.value,
             incomes = incomes
         )
+    }
+
+    fun addExpense(expense: ExpenseEntity) {
+        viewModelScope.launch {
+            repository.insertExpense(expense)
+        }
     }
 }

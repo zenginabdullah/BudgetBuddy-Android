@@ -13,6 +13,7 @@ import androidx.core.content.ContextCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.budgetbuddy.app.data.local.AppDatabase
+import com.budgetbuddy.app.data.remote.FirebaseDataSourceImpl
 import com.budgetbuddy.app.data.repository.ExpenseRepository
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -26,9 +27,11 @@ class MonthlySummaryWorker(
 
     // ✅ Hem expense hem income dao'yu veriyoruz
     private val database = AppDatabase.getInstance(appContext)
+    private val firebaseDataSource = FirebaseDataSourceImpl()
     private val expenseRepository = ExpenseRepository(
         database.expenseDao(),
-        database.incomeDao()
+        database.incomeDao(),
+        firebaseDataSource
     )
 
     override suspend fun doWork(): Result {

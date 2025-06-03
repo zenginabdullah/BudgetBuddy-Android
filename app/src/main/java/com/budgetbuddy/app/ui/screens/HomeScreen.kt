@@ -41,7 +41,7 @@ fun HomeScreen(
 ) {
     val totalExpense by expenseViewModel.totalExpense.collectAsState()
     val totalIncome by incomeViewModel.totalIncome.collectAsState()
-    val incomes by incomeViewModel.incomeList.collectAsState()
+    val incomes by incomeViewModel.allIncomes.collectAsState(initial = emptyList())
     val suggestion = expenseViewModel.generateAISuggestion(incomes)
     val balance = totalIncome - totalExpense
     val balanceColor = if (balance >= 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
@@ -339,7 +339,7 @@ fun AnalysisScreen(
     expenseViewModel: ExpenseViewModel,
     incomeViewModel: IncomeViewModel
 ) {
-    val incomes by incomeViewModel.incomeList.collectAsState()
+    val incomes by incomeViewModel.allIncomes.collectAsState()
     val suggestion = expenseViewModel.generateAISuggestion(incomes)
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {

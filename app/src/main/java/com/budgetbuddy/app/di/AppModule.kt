@@ -11,8 +11,10 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Singleton
-import com.budgetbuddy.app.repository.IncomeRepository
+import com.budgetbuddy.app.data.repository.IncomeRepository
 import com.budgetbuddy.app.data.local.dao.IncomeDao
+import com.budgetbuddy.app.data.remote.FirebaseDataSource
+import com.budgetbuddy.app.data.remote.FirebaseDataSourceImpl
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -25,7 +27,15 @@ object AppModule {
             appContext,
             AppDatabase::class.java,
             "budget_buddy_db"
-        ).build()
+        )
+            .fallbackToDestructiveMigration()
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideFirebaseDataSource(): FirebaseDataSource {
+        return FirebaseDataSourceImpl()
     }
 
     @Provides
@@ -38,15 +48,21 @@ object AppModule {
     fun provideCategoryDao(db: AppDatabase): CategoryDao = db.categoryDao()
 
     @Provides
+    @Singleton
     fun provideExpenseRepository(
         expenseDao: ExpenseDao,
-        incomeDao: IncomeDao
+        incomeDao: IncomeDao,
+        firebaseDataSource: FirebaseDataSource
     ): ExpenseRepository {
-        return ExpenseRepository(expenseDao, incomeDao)
+        return ExpenseRepository(expenseDao, incomeDao, firebaseDataSource)
     }
 
     @Provides
-    fun provideIncomeRepository(incomeDao: IncomeDao): IncomeRepository {
-        return IncomeRepository(incomeDao)
+    @Singleton
+    fun provideIncomeRepository(
+        incomeDao: IncomeDao,
+        firebaseDataSource: FirebaseDataSource
+    ): IncomeRepository {
+        return IncomeRepository(incomeDao, firebaseDataSource)
     }
 }
