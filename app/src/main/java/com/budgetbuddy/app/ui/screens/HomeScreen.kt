@@ -29,6 +29,8 @@ fun HomeScreen(
 ) {
     val totalExpense by expenseViewModel.totalExpense.collectAsState()
     val totalIncome by incomeViewModel.totalIncome.collectAsState()
+    val incomes by incomeViewModel.incomeList.collectAsState()
+    val suggestion = expenseViewModel.generateAISuggestion(incomes)
     val balance = totalIncome - totalExpense
 
     val context = LocalContext.current
@@ -102,6 +104,20 @@ fun HomeScreen(
             ) {
                 Text("⚙️ Ayarlar")
             }
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            // 💡 Yapay zekâ öneri kartı
+                        SuggestionCard(suggestionText = suggestion)
+
+            // 🔔 Eski uyarı
+                        Text(
+                            text = "🔔 Harcama limiti yaklaşmakta!",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 14.sp,
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                        )
+
         }
 
         Spacer(modifier = Modifier.weight(1f))
@@ -123,5 +139,40 @@ fun SummaryRow(title: String, value: String, color: Color) {
     ) {
         Text(text = title, fontWeight = FontWeight.Medium)
         Text(text = value, color = color, fontWeight = FontWeight.Bold)
+    }
+}
+
+@Composable
+fun SuggestionCard(suggestionText: String) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        elevation = CardDefaults.cardElevation(8.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "💡 Harcama Önerisi",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = suggestionText,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+    }
+}
+
+@Composable
+fun AnalysisScreen(
+    expenseViewModel: ExpenseViewModel,
+    incomeViewModel: IncomeViewModel
+) {
+    val incomes by incomeViewModel.incomeList.collectAsState()
+    val suggestion = expenseViewModel.generateAISuggestion(incomes)
+
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        SuggestionCard(suggestionText = suggestion)
     }
 }
