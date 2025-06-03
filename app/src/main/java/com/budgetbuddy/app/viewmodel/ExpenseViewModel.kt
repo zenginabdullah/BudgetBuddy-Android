@@ -9,6 +9,10 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import com.google.firebase.auth.FirebaseAuth
+import com.budgetbuddy.app.data.local.entity.IncomeEntity
+import com.budgetbuddy.app.util.SpendingAnalyzer
+
 
 @HiltViewModel
 class ExpenseViewModel @Inject constructor(
@@ -47,11 +51,14 @@ class ExpenseViewModel @Inject constructor(
     fun insertExpense(amount: Double, category: String, description: String, date: String) {
         viewModelScope.launch {
             try {
+                val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return@launch
+
                 val expense = ExpenseEntity(
                     amount = amount,
                     category = category,
                     description = description,
-                    date = date
+                    date = date,
+                    userId = uid
                 )
                 repository.insertExpense(expense)
                 Log.d("ExpenseViewModel", "Expense inserted: $expense")
@@ -79,5 +86,11 @@ class ExpenseViewModel @Inject constructor(
                 _totalIncome.value = total
             }
         }
+    }
+    fun generateAISuggestion(incomes: List<IncomeEntity>): String {
+        return SpendingAnalyzer.generateSuggestion(
+            expenses = _allExpenses.value,
+            incomes = incomes
+        )
     }
 }
