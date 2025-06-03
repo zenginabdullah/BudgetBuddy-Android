@@ -19,6 +19,7 @@ import com.budgetbuddy.app.ui.navigation.AppNavHost
 import com.budgetbuddy.app.ui.theme.BudgetBuddyTheme
 import com.budgetbuddy.app.util.NetworkConnectivityObserver
 import com.budgetbuddy.app.util.NotificationScheduler
+import com.budgetbuddy.app.util.NotificationHelper
 import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.LocalContext
 import androidx.work.OneTimeWorkRequestBuilder
@@ -117,8 +118,18 @@ class MainActivity : ComponentActivity() {
 
                             if (isEnabled) {
                                 NotificationScheduler.scheduleDailySummary(applicationContext)
+                                NotificationHelper.showInfoNotification(
+                                    applicationContext,
+                                    "Bildirimler Açıldı",
+                                    "Günlük özet bildirimleri aktif hale getirildi"
+                                )
                             } else {
                                 NotificationScheduler.cancelDailySummary(applicationContext)
+                                NotificationHelper.showInfoNotification(
+                                    applicationContext,
+                                    "Bildirimler Kapatıldı",
+                                    "Bildirimler devre dışı bırakıldı"
+                                )
                             }
                         }
                     )

@@ -67,16 +67,6 @@ fun HomeScreen(
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold
             )
-
-            IconButton(onClick = {}) {
-                Badge {
-                    Icon(
-                        Icons.Default.Notifications,
-                        contentDescription = "Bildirimler",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
