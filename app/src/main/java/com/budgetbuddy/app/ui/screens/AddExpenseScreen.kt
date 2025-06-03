@@ -23,7 +23,7 @@ fun AddExpenseScreen(viewModel: ExpenseViewModel) {
     var amount by remember { mutableStateOf("") }
     var category by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
-    val date = remember { SimpleDateFormat("dd.MM.yyyy", Locale.getDefault()).format(Date()) }
+    var date by remember { mutableStateOf(SimpleDateFormat("dd.MM.yyyy", Locale.getDefault()).format(Date())) }
 
     val categoryOptions = listOf("Gıda", "Ulaşım", "Eğlence", "Eğitim", "Fatura")
 
@@ -62,7 +62,7 @@ fun AddExpenseScreen(viewModel: ExpenseViewModel) {
         // Tarih alanı
         OutlinedTextField(
             value = date,
-            onValueChange = {},
+            onValueChange = { date = it },
             label = { Text("Tarih") },
             modifier = Modifier.fillMaxWidth()
         )

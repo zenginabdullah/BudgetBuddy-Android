@@ -21,8 +21,7 @@ fun AddIncomeScreen(viewModel: IncomeViewModel) {
     var amount by remember { mutableStateOf("") }
     var category by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
-    val date = remember { SimpleDateFormat("dd.MM.yyyy", Locale.getDefault()).format(Date()) }
-
+    var date by remember { mutableStateOf(SimpleDateFormat("dd.MM.yyyy", Locale.getDefault()).format(Date())) }
 
     val categoryOptions = listOf("Maaş", "Serbest Çalışma", "Yatırım", "Burs", "Diğer")
 
@@ -60,7 +59,7 @@ fun AddIncomeScreen(viewModel: IncomeViewModel) {
 
         OutlinedTextField(
             value = date,
-            onValueChange = {},
+            onValueChange = { date = it }, // 🔥 Artık değişiyor!
             label = { Text("Tarih") },
             modifier = Modifier.fillMaxWidth()
         )
