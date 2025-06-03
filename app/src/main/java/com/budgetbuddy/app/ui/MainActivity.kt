@@ -21,6 +21,12 @@ import com.budgetbuddy.app.util.NetworkConnectivityObserver
 import com.budgetbuddy.app.util.NotificationScheduler
 import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.LocalContext
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.ExistingWorkPolicy
+import com.budgetbuddy.app.util.MonthlySummaryWorker
+import java.util.concurrent.TimeUnit
+
 
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -68,10 +74,22 @@ class MainActivity : ComponentActivity() {
             }
         }
 
+        // 📅 MonthlySummaryWorker test
+        val testRequest = OneTimeWorkRequestBuilder<MonthlySummaryWorker>()
+            .setInitialDelay(5, TimeUnit.SECONDS)
+            .build()
+
+        WorkManager.getInstance(applicationContext).enqueueUniqueWork(
+            "test_monthly_summary",
+            ExistingWorkPolicy.REPLACE,
+            testRequest
+        )
+
         // 🎨 UI başlat
         setContent {
             val context = LocalContext.current
             val prefs = remember { PreferencesManager(context) }
+            val navController = rememberNavController()
 
             var isDark by remember { mutableStateOf(prefs.isDarkModeEnabled()) }
             var currency by remember { mutableStateOf(prefs.getCurrency()) }
@@ -127,4 +145,5 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
 }

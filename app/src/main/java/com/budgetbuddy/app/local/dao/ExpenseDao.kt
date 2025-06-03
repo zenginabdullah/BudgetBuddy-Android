@@ -22,5 +22,9 @@ interface ExpenseDao {
     @Query("SELECT SUM(amount) FROM expenses")
     fun getTotalExpense(): Flow<Double?>
 
+    @Query("SELECT * FROM expenses")
+    suspend fun getAllExpensesOnce(): List<ExpenseEntity>
+
+
 
 }

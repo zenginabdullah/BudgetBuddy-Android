@@ -27,4 +27,9 @@ class ExpenseRepository(
     }
 
     fun getAllIncomes(): Flow<List<IncomeEntity>> = incomeDao.getAllIncomes()
+
+    suspend fun getAllExpensesOnce(): List<ExpenseEntity> {
+        return expenseDao.getAllExpensesOnce()
+    }
+
 }
