@@ -13,6 +13,8 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.*
+
 
 @HiltViewModel
 class IncomeViewModel @Inject constructor(
@@ -66,6 +68,15 @@ class IncomeViewModel @Inject constructor(
         SharingStarted.WhileSubscribed(5000),
         emptyList()
     )
+
+    // ✅ Toplam gelir hesaplaması
+    val totalIncome: StateFlow<Double> = incomeList
+        .map { incomes -> incomes.sumOf { it.amount } }
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            0.0
+        )
 }
 
 
