@@ -26,5 +26,11 @@ interface ExpenseDao {
     suspend fun getAllExpensesOnce(): List<ExpenseEntity>
 
 
+    @Query("SELECT * FROM expenses WHERE userId = :uid")
+    fun getAllExpenses(uid: String): Flow<List<ExpenseEntity>>
+
+    @Query("SELECT * FROM expenses WHERE userId = :userId ORDER BY date DESC")
+    fun getExpensesByUserId(userId: String): Flow<List<ExpenseEntity>>
+
 
 }

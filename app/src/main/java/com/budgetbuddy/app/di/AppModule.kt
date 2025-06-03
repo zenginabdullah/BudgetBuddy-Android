@@ -25,7 +25,9 @@ object AppModule {
             appContext,
             AppDatabase::class.java,
             "budget_buddy_db"
-        ).build()
+        )
+        .fallbackToDestructiveMigration()
+        .build()
     }
 
     @Provides

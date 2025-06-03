@@ -16,4 +16,8 @@ class IncomeRepository @Inject constructor(private val incomeDao: IncomeDao) {
     fun getAllIncomes(): Flow<List<IncomeEntity>> {
         return incomeDao.getAllIncomes()
     }
+
+    fun getIncomesByUserId(userId: String): Flow<List<IncomeEntity>> {
+        return incomeDao.getIncomesByUserId(userId)
+    }
 }

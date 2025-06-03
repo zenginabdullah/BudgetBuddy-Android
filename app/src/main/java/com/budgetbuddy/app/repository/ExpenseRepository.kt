@@ -32,4 +32,7 @@ class ExpenseRepository(
         return expenseDao.getAllExpensesOnce()
     }
 
+    fun getExpensesByUserId(userId: String): Flow<List<ExpenseEntity>> {
+        return expenseDao.getExpensesByUserId(userId)
+    }
 }

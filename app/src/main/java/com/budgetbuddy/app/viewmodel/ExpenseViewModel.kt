@@ -40,10 +40,13 @@ class ExpenseViewModel @Inject constructor(
     }
 
     private fun observeExpenses() {
-        viewModelScope.launch {
-            repository.getAllExpenses().collect { expenses ->
-                _allExpenses.value = expenses
-                _totalExpense.value = expenses.sumOf { it.amount }
+        val uid = FirebaseAuth.getInstance().currentUser?.uid
+        if (uid != null) {
+            viewModelScope.launch {
+                repository.getExpensesByUserId(uid).collect { expenses ->
+                    _allExpenses.value = expenses
+                    _totalExpense.value = expenses.sumOf { it.amount }
+                }
             }
         }
     }
