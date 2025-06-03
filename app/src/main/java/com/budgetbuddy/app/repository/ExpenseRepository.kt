@@ -35,4 +35,9 @@ class ExpenseRepository(
     fun getExpensesByUserId(userId: String): Flow<List<ExpenseEntity>> {
         return expenseDao.getExpensesByUserId(userId)
     }
+
+    suspend fun getTodayTotalExpense(date: String, userId: String): Double? {
+        return expenseDao.getTodayTotalExpense(date, userId)
+    }
+
 }

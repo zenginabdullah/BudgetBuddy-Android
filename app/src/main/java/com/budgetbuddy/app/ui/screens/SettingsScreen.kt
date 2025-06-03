@@ -19,6 +19,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
+import android.widget.Toast
+import com.budgetbuddy.app.data.PreferencesManager
+import androidx.compose.material.icons.filled.AttachMoney
+
 
 @Composable
 fun SettingsScreen(
@@ -29,6 +34,7 @@ fun SettingsScreen(
     onCurrencyChange: (String) -> Unit,
     onNotificationsToggle: (Boolean) -> Unit
 ) {
+    val context = LocalContext.current
     val currencyOptions = listOf("₺", "$", "€")
     var currencyMenuExpanded by remember { mutableStateOf(false) }
     var showInfo by remember { mutableStateOf(false) }
@@ -143,6 +149,46 @@ fun SettingsScreen(
                                 uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
                             )
                         )
+                    }
+                )
+
+                SettingsItem(
+                    title = "Harcama Limiti",
+                    icon = Icons.Default.AttachMoney,
+                    content = {
+                        var limitText by remember { mutableStateOf(PreferencesManager(context).getDailyLimit().toString()) }
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.widthIn(max = 250.dp) // Fazla taşmasın
+                        ) {
+                            OutlinedTextField(
+                                value = limitText,
+                                onValueChange = { limitText = it },
+                                singleLine = true,
+                                modifier = Modifier.weight(1f),
+                                label = { Text("₺ Limit") },
+                                textStyle = MaterialTheme.typography.bodyMedium,
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                                )
+                            )
+
+                            Button(
+                                onClick = {
+                                    val parsed = limitText.toDoubleOrNull() ?: 0.0
+                                    PreferencesManager(context).setDailyLimit(parsed)
+                                    Toast.makeText(context, "Günlük limit güncellendi", Toast.LENGTH_SHORT).show()
+                                },
+                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
+                                shape = RoundedCornerShape(10.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                            ) {
+                                Text("✓", style = MaterialTheme.typography.labelLarge)
+                            }
+                        }
                     }
                 )
             }

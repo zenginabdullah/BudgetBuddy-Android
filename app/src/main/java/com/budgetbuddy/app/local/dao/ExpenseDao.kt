@@ -32,5 +32,7 @@ interface ExpenseDao {
     @Query("SELECT * FROM expenses WHERE userId = :userId ORDER BY date DESC")
     fun getExpensesByUserId(userId: String): Flow<List<ExpenseEntity>>
 
+    @Query("SELECT SUM(amount) FROM expenses WHERE date = :date AND userId = :userId")
+    suspend fun getTodayTotalExpense(date: String, userId: String): Double?
 
 }
