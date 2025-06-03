@@ -17,6 +17,7 @@ import com.budgetbuddy.app.viewmodel.ExpenseViewModel
 import com.budgetbuddy.app.viewmodel.IncomeViewModel
 import com.budgetbuddy.app.data.PreferencesManager
 
+
 @Composable
 fun HomeScreen(
     expenseViewModel: ExpenseViewModel,
@@ -25,7 +26,7 @@ fun HomeScreen(
     onAddExpenseClick: () -> Unit,
     onAddIncomeClick: () -> Unit,
     onHistoryClick: () -> Unit,
-    onSettingsClick: () -> Unit
+    onSettingsClick: () -> Unit,
 ) {
     val totalExpense by expenseViewModel.totalExpense.collectAsState()
     val totalIncome by incomeViewModel.totalIncome.collectAsState()
@@ -102,6 +103,7 @@ fun HomeScreen(
             ) {
                 Text("⚙️ Ayarlar")
             }
+
         }
 
         Spacer(modifier = Modifier.weight(1f))
