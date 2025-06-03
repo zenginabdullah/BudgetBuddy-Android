@@ -14,7 +14,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.*
-
+import com.google.firebase.auth.FirebaseAuth
 
 @HiltViewModel
 class IncomeViewModel @Inject constructor(
@@ -27,24 +27,31 @@ class IncomeViewModel @Inject constructor(
     val selectedCategory: StateFlow<String?> = _selectedCategory
 
     init {
-        loadIncomes()
+        observeIncome()
     }
 
-    private fun loadIncomes() {
-        viewModelScope.launch {
-            repository.getAllIncomes().collect {
-                _incomeList.value = it
+    private fun observeIncome() {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid
+        if (uid != null) {
+            viewModelScope.launch {
+                repository.getIncomesByUserId(uid).collect { incomes ->
+                    _incomeList.value = incomes
+                    // Eğer aşağıda _totalIncome varsa, buraya ekle ama zaten map ile yukarıda yapıyorsun
+                }
             }
         }
     }
 
     fun insertIncome(amount: Double, category: String, date: String, description: String) {
         viewModelScope.launch {
+            val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return@launch
+
             val income = IncomeEntity(
                 amount = amount,
                 category = category,
                 description = description,
-                date = date
+                date = date,
+                userId = uid
             )
             repository.insertIncome(income)
         }

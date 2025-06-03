@@ -13,7 +13,7 @@ import com.budgetbuddy.app.data.local.entity.IncomeEntity
 
 @Database(
     entities = [ExpenseEntity::class, IncomeEntity::class, CategoryEntity::class],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
