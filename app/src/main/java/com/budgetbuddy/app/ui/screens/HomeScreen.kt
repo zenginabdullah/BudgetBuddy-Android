@@ -50,18 +50,46 @@ fun HomeScreen(
     onHistoryClick: () -> Unit,
     onSettingsClick: () -> Unit,
 ) {
+    // ViewModel'den değerleri al
     val totalExpense by expenseViewModel.totalExpense.collectAsState()
     val totalIncome by incomeViewModel.totalIncome.collectAsState()
 
     val expenses by expenseViewModel.allExpenses.collectAsState()
     val incomes by incomeViewModel.allIncomes.collectAsState(initial = emptyList())
 
+    // Log için doğrudan listelerden hesapla
+    val calculatedTotalExpense = expenses.sumOf { it.amount }
+    val calculatedTotalIncome = incomes.sumOf { it.amount }
+
     val suggestion = expenseViewModel.generateAISuggestion(incomes)
     val balance = totalIncome - totalExpense
     val balanceColor = if (balance >= 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
     val scrollState = rememberScrollState()
 
+    // Gider toplamını manuel olarak güncelle
+    LaunchedEffect(expenses) {
+        if (calculatedTotalExpense != totalExpense) {
+            expenseViewModel.updateTotalExpense()
+        }
+    }
+
+    // Debug için log ekleyelim
+    LaunchedEffect(totalIncome, totalExpense, calculatedTotalExpense, calculatedTotalIncome) {
+        Log.d("HomeScreen", "VM values - totalIncome: $totalIncome, totalExpense: $totalExpense, balance: $balance")
+        Log.d("HomeScreen", "Calculated values - totalIncome: $calculatedTotalIncome, totalExpense: $calculatedTotalExpense")
+        Log.d("HomeScreen", "List sizes - incomes: ${incomes.size}, expenses: ${expenses.size}")
+
+        // Harcama detaylarını logla
+        expenses.forEach { expense ->
+            Log.d("HomeScreen", "Expense: ${expense.category}, amount: ${expense.amount}")
+        }
+    }
+
     var showWarning by remember { mutableStateOf(balance < totalIncome * 0.2) }
+
+    // Bütçe kartında hesaplanmış değerleri kullan
+    val displayBalance = calculatedTotalIncome - calculatedTotalExpense
+    val displayBalanceColor = if (displayBalance >= 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
 
     Column(
         modifier = Modifier
@@ -108,10 +136,10 @@ fun HomeScreen(
                 )
 
                 Text(
-                    text = "$currencySymbol%.2f".format(balance),
+                    text = "$currencySymbol%.2f".format(displayBalance),
                     style = MaterialTheme.typography.headlineLarge,
                     fontWeight = FontWeight.Bold,
-                    color = balanceColor
+                    color = displayBalanceColor
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -122,14 +150,14 @@ fun HomeScreen(
                 ) {
                     FinanceInfoItem(
                         title = "Gelir",
-                        amount = "$currencySymbol%.2f".format(totalIncome),
+                        amount = "$currencySymbol%.2f".format(calculatedTotalIncome),
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.weight(1f)
                     )
 
                     FinanceInfoItem(
                         title = "Gider",
-                        amount = "$currencySymbol%.2f".format(totalExpense),
+                        amount = "$currencySymbol%.2f".format(calculatedTotalExpense),
                         color = MaterialTheme.colorScheme.error,
                         modifier = Modifier.weight(1f)
                     )
@@ -393,11 +421,32 @@ fun AnalysisScreen(
     incomeViewModel: IncomeViewModel,
     currencySymbol: String
 ) {
-
     val expenses by expenseViewModel.allExpenses.collectAsState()
     val incomes by incomeViewModel.allIncomes.collectAsState()
 
+    // Doğrudan listelerden hesapla
+    val totalExpense = expenses.sumOf { it.amount }
+    val totalIncome = incomes.sumOf { it.amount }
+
     val suggestion = expenseViewModel.generateAISuggestion(incomes)
+
+    // Gider toplamını manuel olarak güncelle
+    LaunchedEffect(expenses) {
+        if (totalExpense != expenseViewModel.totalExpense.value) {
+            expenseViewModel.updateTotalExpense()
+        }
+    }
+
+    // Debug için log ekleyelim
+    LaunchedEffect(totalIncome, totalExpense) {
+        Log.d("AnalysisScreen", "totalIncome: $totalIncome, totalExpense: $totalExpense")
+        Log.d("AnalysisScreen", "List sizes - incomes: ${incomes.size}, expenses: ${expenses.size}")
+
+        // Harcama detaylarını logla
+        expenses.forEach { expense ->
+            Log.d("AnalysisScreen", "Expense: ${expense.category}, amount: ${expense.amount}")
+        }
+    }
 
     Column(
         modifier = Modifier

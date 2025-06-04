@@ -1,5 +1,6 @@
 package com.budgetbuddy.app.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.budgetbuddy.app.data.local.entity.IncomeEntity
@@ -24,6 +25,10 @@ class IncomeViewModel @Inject constructor(
     private val _incomeList = MutableStateFlow<List<IncomeEntity>>(emptyList())
     val incomeList: StateFlow<List<IncomeEntity>> = _incomeList.asStateFlow()
 
+    // Toplam gelir için MutableStateFlow
+    private val _totalIncome = MutableStateFlow(0.0)
+    val totalIncome: StateFlow<Double> = _totalIncome.asStateFlow()
+
     init {
         // Firestore'dan verileri senkronize et (isteğe bağlı ama faydalı)
         viewModelScope.launch {
@@ -40,6 +45,11 @@ class IncomeViewModel @Inject constructor(
                 repository.getIncomesByUserId(uid).collect { list ->
                     _allIncomes.value = list
                     _incomeList.value = list
+
+                    // Toplam geliri hesapla
+                    val total = list.sumOf { it.amount }
+                    _totalIncome.value = total
+                    Log.d("IncomeViewModel", "Total income updated: $total, list size: ${list.size}")
                 }
             }
         }
@@ -56,6 +66,7 @@ class IncomeViewModel @Inject constructor(
                 userId = uid
             )
             repository.insertIncome(income)
+            Log.d("IncomeViewModel", "Income inserted: $income")
         }
     }
 
@@ -80,12 +91,4 @@ class IncomeViewModel @Inject constructor(
         SharingStarted.WhileSubscribed(5000),
         emptyList()
     )
-
-    val totalIncome: StateFlow<Double> = _allIncomes
-        .map { it.sumOf { income -> income.amount } }
-        .stateIn(
-            viewModelScope,
-            SharingStarted.WhileSubscribed(5000),
-            0.0
-        )
 }

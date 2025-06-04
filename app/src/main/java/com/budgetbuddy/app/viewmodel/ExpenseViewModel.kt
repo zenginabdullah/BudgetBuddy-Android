@@ -12,9 +12,6 @@ import javax.inject.Inject
 import com.google.firebase.auth.FirebaseAuth
 import com.budgetbuddy.app.data.local.entity.IncomeEntity
 import com.budgetbuddy.app.util.SpendingAnalyzer
-import android.content.Context
-import com.budgetbuddy.app.data.PreferencesManager
-import com.budgetbuddy.app.util.NotificationHelper
 
 
 @HiltViewModel
@@ -38,19 +35,13 @@ class ExpenseViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     init {
-        // 1. Firestore’daki kayıtları çek ve Room’u güncelle
+        // Firebase'den verileri senkronize et
         viewModelScope.launch {
             repository.syncAllExpensesFromFirebase()
+            Log.d("ExpenseViewModel", "Synced expenses from Firebase")
         }
 
-        // 2. Room’daki güncel listeyi dinle ve StateFlow’a aktar
-        viewModelScope.launch {
-            repository.getAllExpenses().collect { list ->
-                _allExpenses.value = list
-            }
-        }
-
-        // 3. Gelir toplamını güncelleyen fonksiyon varsa, onu da çağırabilirsiniz.
+        observeExpenses()
         updateTotalIncome()
     }
 
@@ -60,19 +51,22 @@ class ExpenseViewModel @Inject constructor(
             viewModelScope.launch {
                 repository.getExpensesByUserId(uid).collect { expenses ->
                     _allExpenses.value = expenses
-                    _totalExpense.value = expenses.sumOf { it.amount }
+                    val total = expenses.sumOf { it.amount }
+                    _totalExpense.value = total
+                    Log.d("ExpenseViewModel", "Total expense updated: $total, expenses size: ${expenses.size}")
+
+                    // Harcama detaylarını logla
+                    expenses.forEach { expense ->
+                        Log.d("ExpenseViewModel", "Expense: ${expense.category}, amount: ${expense.amount}")
+                    }
                 }
             }
+        } else {
+            Log.e("ExpenseViewModel", "User ID is null, cannot observe expenses")
         }
     }
 
-    fun insertExpense(
-        amount: Double,
-        category: String,
-        description: String,
-        date: String,
-        context: Context
-    ) {
+    fun insertExpense(amount: Double, category: String, description: String, date: String) {
         viewModelScope.launch {
             try {
                 val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return@launch
@@ -87,40 +81,45 @@ class ExpenseViewModel @Inject constructor(
                 repository.insertExpense(expense)
                 Log.d("ExpenseViewModel", "Expense inserted: $expense")
 
-                // 💥 Harcama limiti kontrolü
-                val prefs = PreferencesManager(context)
-                val todayExpenses: Double = repository.getTodayTotalExpense(date, uid) ?: 0.0
-                val dailyLimit: Double = prefs.getDailyLimit().toDouble()
-
-                if (dailyLimit > 0.0 && todayExpenses > dailyLimit) {
-                    NotificationHelper.showLimitExceededNotification(context, todayExpenses, dailyLimit)
-                }
-
+                // Ekleme sonrası güncel toplam gideri logla
+                val currentExpenses = _allExpenses.value
+                val newTotal = currentExpenses.sumOf { it.amount } + amount
+                Log.d("ExpenseViewModel", "After insert - expected total expense: $newTotal")
             } catch (e: Exception) {
-                Log.e("ExpenseViewModel", "Insert failed: \${e.message}")
+                Log.e("ExpenseViewModel", "Insert failed: ${e.message}")
             }
         }
     }
 
     fun deleteExpense(expense: ExpenseEntity) = viewModelScope.launch {
         repository.deleteExpense(expense)
+        Log.d("ExpenseViewModel", "Expense deleted: $expense")
     }
 
     fun clearAllExpenses() = viewModelScope.launch {
         repository.clearAllExpenses()
+        Log.d("ExpenseViewModel", "All expenses cleared")
     }
 
     fun setCategoryFilter(category: String?) {
         _selectedCategory.value = category
     }
+
     private fun updateTotalIncome() {
-        viewModelScope.launch {
-            repository.getAllIncomes().collect { incomes ->
-                val total = incomes.sumOf { it.amount }
-                _totalIncome.value = total
+        val uid = FirebaseAuth.getInstance().currentUser?.uid
+        if (uid != null) {
+            viewModelScope.launch {
+                repository.getAllIncomes().collect { incomes ->
+                    val total = incomes.sumOf { it.amount }
+                    _totalIncome.value = total
+                    Log.d("ExpenseViewModel", "Total income updated: $total")
+                }
             }
+        } else {
+            Log.e("ExpenseViewModel", "User ID is null, cannot update total income")
         }
     }
+
     fun generateAISuggestion(incomes: List<IncomeEntity>): String {
         return SpendingAnalyzer.generateSuggestion(
             expenses = _allExpenses.value,
@@ -128,9 +127,13 @@ class ExpenseViewModel @Inject constructor(
         )
     }
 
-    fun addExpense(expense: ExpenseEntity) {
+    // Gider toplamını manuel olarak güncelle
+    fun updateTotalExpense() {
         viewModelScope.launch {
-            repository.insertExpense(expense)
+            val expenses = _allExpenses.value
+            val total = expenses.sumOf { it.amount }
+            _totalExpense.value = total
+            Log.d("ExpenseViewModel", "Manually updated total expense: $total")
         }
     }
 }
