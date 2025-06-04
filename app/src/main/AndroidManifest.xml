@@ -46,6 +46,7 @@
             </intent-filter>
         </activity>
 
-    </application>
+        <receiver android:name=".util.MonthlySummaryReceiver" android:enabled="true" android:exported="false"/>
 
+    </application>
 </manifest>
