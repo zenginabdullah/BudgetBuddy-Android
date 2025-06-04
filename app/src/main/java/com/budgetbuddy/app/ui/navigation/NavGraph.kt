@@ -6,6 +6,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.budgetbuddy.app.ui.screens.*
+import com.budgetbuddy.app.viewmodel.ChatBotViewModel
 import com.budgetbuddy.app.viewmodel.ExpenseViewModel
 import com.budgetbuddy.app.viewmodel.IncomeViewModel
 
@@ -17,7 +18,8 @@ fun AppNavHost(
     notificationsEnabled: Boolean,
     onThemeToggle: (Boolean) -> Unit,
     onCurrencyChange: (String) -> Unit,
-    onNotificationsToggle: (Boolean) -> Unit
+    onNotificationsToggle: (Boolean) -> Unit,
+    chatBotViewModel: ChatBotViewModel
 ) {
     NavHost(navController = navController, startDestination = "login") {
 
@@ -53,7 +55,8 @@ fun AppNavHost(
                 onAddExpenseClick = { navController.navigate("add_expense") },
                 onAddIncomeClick = { navController.navigate("add_income") },
                 onHistoryClick = { navController.navigate("history") },
-                onSettingsClick = { navController.navigate("settings") }
+                onSettingsClick = { navController.navigate("settings") },
+                onChatBotClick = { navController.navigate("chatbot") }
             )
         }
 
@@ -81,6 +84,17 @@ fun AppNavHost(
                 onThemeToggle = onThemeToggle,
                 onCurrencyChange = onCurrencyChange,
                 onNotificationsToggle = onNotificationsToggle
+            )
+        }
+
+        // Finansal Asistan ekranı
+        composable("chatbot") {
+            val expenseViewModel: ExpenseViewModel = hiltViewModel()
+            val incomeViewModel: IncomeViewModel = hiltViewModel()
+            ChatBotScreen(
+                expenseViewModel = expenseViewModel,
+                incomeViewModel = incomeViewModel,
+                chatBotViewModel = chatBotViewModel
             )
         }
     }
