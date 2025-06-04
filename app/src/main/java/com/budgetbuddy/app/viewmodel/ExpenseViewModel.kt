@@ -12,6 +12,9 @@ import javax.inject.Inject
 import com.google.firebase.auth.FirebaseAuth
 import com.budgetbuddy.app.data.local.entity.IncomeEntity
 import com.budgetbuddy.app.util.SpendingAnalyzer
+import android.content.Context
+import com.budgetbuddy.app.data.PreferencesManager
+import com.budgetbuddy.app.util.NotificationHelper
 
 
 @HiltViewModel
@@ -66,11 +69,18 @@ class ExpenseViewModel @Inject constructor(
         }
     }
 
-    fun insertExpense(amount: Double, category: String, description: String, date: String) {
+    fun insertExpense(
+        amount: Double,
+        category: String,
+        description: String,
+        date: String,
+        context: Context
+    ) {
         viewModelScope.launch {
             try {
                 val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return@launch
 
+                // Harcama nesnesini oluştur
                 val expense = ExpenseEntity(
                     amount = amount,
                     category = category,
@@ -78,18 +88,32 @@ class ExpenseViewModel @Inject constructor(
                     date = date,
                     userId = uid
                 )
+
+                // Harcamayı repository'ye ekle
                 repository.insertExpense(expense)
                 Log.d("ExpenseViewModel", "Expense inserted: $expense")
 
-                // Ekleme sonrası güncel toplam gideri logla
+                // 💥 Harcama limiti kontrolü
+                val prefs = PreferencesManager(context)
+                val todayExpenses: Double = repository.getTodayTotalExpense(date, uid) ?: 0.0
+                val dailyLimit: Double = prefs.getDailyLimit().toDouble()
+
+                // Eğer günlük harcama limiti aşılmışsa, bildirim göster
+                if (dailyLimit > 0.0 && todayExpenses + amount > dailyLimit) {
+                    NotificationHelper.showLimitExceededNotification(context, todayExpenses + amount, dailyLimit)
+                }
+
+                // Eklenmiş gider sonrası toplam gideri logla
                 val currentExpenses = _allExpenses.value
                 val newTotal = currentExpenses.sumOf { it.amount } + amount
                 Log.d("ExpenseViewModel", "After insert - expected total expense: $newTotal")
+
             } catch (e: Exception) {
                 Log.e("ExpenseViewModel", "Insert failed: ${e.message}")
             }
         }
     }
+
 
     fun deleteExpense(expense: ExpenseEntity) = viewModelScope.launch {
         repository.deleteExpense(expense)
