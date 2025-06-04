@@ -160,7 +160,8 @@ fun AddExpenseScreen(viewModel: ExpenseViewModel) {
                         amount = amount.toDoubleOrNull() ?: 0.0,
                         category = category,
                         description = description,
-                        date = date
+                        date = date,
+                        context = context
                     )
                     Toast.makeText(context, "Harcama kaydedildi!", Toast.LENGTH_SHORT).show()
 

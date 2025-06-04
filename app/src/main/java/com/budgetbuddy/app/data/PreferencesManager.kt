@@ -36,4 +36,12 @@ class PreferencesManager(context: Context) {
     fun areNotificationsEnabled(): Boolean {
         return prefs.getBoolean(KEY_NOTIFICATIONS, true)
     }
+
+    fun setDailyLimit(limit: Double) {
+        prefs.edit().putFloat("daily_limit", limit.toFloat()).apply()
+    }
+
+    fun getDailyLimit(): Double {
+        return prefs.getFloat("daily_limit", 0f).toDouble()
+    }
 }

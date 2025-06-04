@@ -21,22 +21,22 @@ import com.budgetbuddy.app.data.remote.FirebaseDataSourceImpl
 object AppModule {
 
     @Provides
-    @Singleton
-    fun provideDatabase(@ApplicationContext appContext: Context): AppDatabase {
-        return Room.databaseBuilder(
-            appContext,
-            AppDatabase::class.java,
-            "budget_buddy_db"
-        )
-            .fallbackToDestructiveMigration()
-            .build()
-    }
+@Singleton
+fun provideDatabase(@ApplicationContext appContext: Context): AppDatabase {
+    return Room.databaseBuilder(
+        appContext,
+        AppDatabase::class.java,
+        "budget_buddy_db"
+    )
+    .fallbackToDestructiveMigration()
+    .build()
+}
 
-    @Provides
-    @Singleton
-    fun provideFirebaseDataSource(): FirebaseDataSource {
-        return FirebaseDataSourceImpl()
-    }
+@Provides
+@Singleton
+fun provideFirebaseDataSource(): FirebaseDataSource {
+    return FirebaseDataSourceImpl()
+}
 
     @Provides
     fun provideExpenseDao(db: AppDatabase): ExpenseDao = db.expenseDao()

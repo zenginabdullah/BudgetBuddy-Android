@@ -21,4 +21,10 @@ interface IncomeDao {
 
     @Query("SELECT SUM(amount) FROM incomes")
     fun getTotalIncome(): Flow<Double?>
+
+    @Query("SELECT * FROM expenses WHERE userId = :uid")
+    fun getAllExpenses(uid: String): Flow<List<IncomeEntity>>
+
+    @Query("SELECT * FROM incomes WHERE userId = :userId ORDER BY date DESC")
+    fun getIncomesByUserId(userId: String): Flow<List<IncomeEntity>>
 }
