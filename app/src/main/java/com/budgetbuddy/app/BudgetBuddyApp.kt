@@ -3,6 +3,7 @@ package com.budgetbuddy.app
 import android.app.Application
 import androidx.work.*
 import com.budgetbuddy.app.util.MonthlySummaryWorker
+import com.google.firebase.FirebaseApp
 import dagger.hilt.android.HiltAndroidApp
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -13,6 +14,7 @@ class BudgetBuddyApp : Application() {
     override fun onCreate() {
         super.onCreate()
         setupMonthlyWorker()
+        FirebaseApp.initializeApp(this)
     }
 
     private fun setupMonthlyWorker() {

@@ -1,6 +1,9 @@
 package com.budgetbuddy.app.data.local.dao
 
-import androidx.room.*
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
 import com.budgetbuddy.app.data.local.entity.ExpenseEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -8,10 +11,7 @@ import kotlinx.coroutines.flow.Flow
 interface ExpenseDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertExpense(expense: ExpenseEntity)
-
-    @Delete
-    suspend fun deleteExpense(expense: ExpenseEntity)
+    suspend fun insertExpense(expense: ExpenseEntity): Long
 
     @Query("SELECT * FROM expenses ORDER BY date DESC")
     fun getAllExpenses(): Flow<List<ExpenseEntity>>
@@ -19,12 +19,11 @@ interface ExpenseDao {
     @Query("DELETE FROM expenses")
     suspend fun clearAllExpenses()
 
-    @Query("SELECT SUM(amount) FROM expenses")
-    fun getTotalExpense(): Flow<Double?>
+    @Query("DELETE FROM expenses WHERE id = :expenseId")
+    suspend fun deleteExpenseById(expenseId: Int)
 
-    @Query("SELECT * FROM expenses")
+    @Query("SELECT * FROM expenses ORDER BY date DESC")
     suspend fun getAllExpensesOnce(): List<ExpenseEntity>
-
 
     @Query("SELECT * FROM expenses WHERE userId = :uid")
     fun getAllExpenses(uid: String): Flow<List<ExpenseEntity>>
@@ -34,5 +33,4 @@ interface ExpenseDao {
 
     @Query("SELECT SUM(amount) FROM expenses WHERE date = :date AND userId = :userId")
     suspend fun getTodayTotalExpense(date: String, userId: String): Double?
-
 }

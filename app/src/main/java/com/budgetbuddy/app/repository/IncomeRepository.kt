@@ -1,16 +1,29 @@
-package com.budgetbuddy.app.repository
+package com.budgetbuddy.app.data.repository
 
 import com.budgetbuddy.app.data.local.dao.IncomeDao
 import com.budgetbuddy.app.data.local.entity.IncomeEntity
+import com.budgetbuddy.app.data.remote.FirebaseDataSource
 import kotlinx.coroutines.flow.Flow
-import javax.inject.Inject
 
-class IncomeRepository @Inject constructor(private val incomeDao: IncomeDao) {
+class IncomeRepository(
+    private val incomeDao: IncomeDao,
+    private val firebaseDataSource: FirebaseDataSource
+) {
+
     suspend fun insertIncome(income: IncomeEntity) {
-        incomeDao.insertIncome(income)
+        val generatedIdLong: Long = incomeDao.insertIncome(income)
+        val generatedId: Int = generatedIdLong.toInt()
+        val incomeWithId = income.copy(id = generatedId)
+        firebaseDataSource.insertIncome(incomeWithId)
     }
+
     suspend fun deleteIncome(income: IncomeEntity) {
-        incomeDao.deleteIncome(income)
+        incomeDao.deleteIncomeById(income.id)
+        firebaseDataSource.deleteIncome(income.id)
+    }
+
+    suspend fun clearAllIncomes() {
+        incomeDao.clearAllIncomes()
     }
 
     fun getAllIncomes(): Flow<List<IncomeEntity>> {
@@ -19,5 +32,11 @@ class IncomeRepository @Inject constructor(private val incomeDao: IncomeDao) {
 
     fun getIncomesByUserId(userId: String): Flow<List<IncomeEntity>> {
         return incomeDao.getIncomesByUserId(userId)
+    }
+
+    suspend fun syncAllIncomesFromFirebase() {
+        val remoteIncomes: List<IncomeEntity> = firebaseDataSource.getAllIncomes()
+        incomeDao.clearAllIncomes()
+        remoteIncomes.forEach { incomeDao.insertIncome(it) }
     }
 }

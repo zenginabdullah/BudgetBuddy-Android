@@ -4,18 +4,25 @@ import com.budgetbuddy.app.data.local.dao.ExpenseDao
 import com.budgetbuddy.app.data.local.entity.ExpenseEntity
 import com.budgetbuddy.app.data.local.entity.IncomeEntity
 import com.budgetbuddy.app.data.local.dao.IncomeDao
+import com.budgetbuddy.app.data.remote.FirebaseDataSource
 import kotlinx.coroutines.flow.Flow
 
 class ExpenseRepository(
     private val expenseDao: ExpenseDao,
-    private val incomeDao: IncomeDao) {
+    private val incomeDao: IncomeDao,
+    private val firebaseDataSource: FirebaseDataSource
+) {
 
     suspend fun insertExpense(expense: ExpenseEntity) {
-        expenseDao.insertExpense(expense)
+        val generatedIdLong: Long = expenseDao.insertExpense(expense)
+        val generatedId: Int = generatedIdLong.toInt()
+        val expenseWithId = expense.copy(id = generatedId)
+        firebaseDataSource.insertExpense(expenseWithId)
     }
 
     suspend fun deleteExpense(expense: ExpenseEntity) {
-        expenseDao.deleteExpense(expense)
+        expenseDao.deleteExpenseById(expense.id)
+        firebaseDataSource.deleteExpense(expense.id)
     }
 
     suspend fun clearAllExpenses() {
@@ -40,4 +47,10 @@ class ExpenseRepository(
         return expenseDao.getTodayTotalExpense(date, userId)
     }
 
+    suspend fun syncAllExpensesFromFirebase() {
+        val remoteExpenses: List<ExpenseEntity> = firebaseDataSource.getAllExpenses()
+        expenseDao.clearAllExpenses()
+        remoteExpenses.forEach { expenseDao.insertExpense(it) }
+    }
 }
+
