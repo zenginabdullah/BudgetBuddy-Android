@@ -82,6 +82,7 @@ class ExpenseViewModel @Inject constructor(
                     category = category,
                     description = description,
                     date = date,
+                    userId = uid
                 )
                 repository.insertExpense(expense)
                 Log.d("ExpenseViewModel", "Expense inserted: $expense")
