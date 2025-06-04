@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AttachMoney
+import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.MoneyOff
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.outlined.History
@@ -49,6 +50,7 @@ fun HomeScreen(
     onAddIncomeClick: () -> Unit,
     onHistoryClick: () -> Unit,
     onSettingsClick: () -> Unit,
+    onChatBotClick: () -> Unit
 ) {
     // ViewModel'den değerleri al
     val totalExpense by expenseViewModel.totalExpense.collectAsState()
@@ -225,6 +227,18 @@ fun HomeScreen(
                     modifier = Modifier.weight(1f)
                 )
             }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Finansal Asistan butonu
+            ActionButton(
+                text = "Finansal Asistan",
+                icon = Icons.Default.Chat,
+                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                onClick = onChatBotClick,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
 
         Spacer(modifier = Modifier.height(24.dp))
