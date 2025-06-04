@@ -5,6 +5,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -19,15 +20,25 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.budgetbuddy.app.viewmodel.ExpenseViewModel
 import com.budgetbuddy.app.viewmodel.IncomeViewModel
 import com.budgetbuddy.app.data.PreferencesManager
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import com.budgetbuddy.app.util.SpendingAnalyzer
+import android.util.Log
+import kotlin.math.min
 
 @Composable
 fun HomeScreen(
@@ -41,10 +52,14 @@ fun HomeScreen(
 ) {
     val totalExpense by expenseViewModel.totalExpense.collectAsState()
     val totalIncome by incomeViewModel.totalIncome.collectAsState()
+
+    val expenses by expenseViewModel.allExpenses.collectAsState()
     val incomes by incomeViewModel.allIncomes.collectAsState(initial = emptyList())
+
     val suggestion = expenseViewModel.generateAISuggestion(incomes)
     val balance = totalIncome - totalExpense
     val balanceColor = if (balance >= 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+    val scrollState = rememberScrollState()
 
     var showWarning by remember { mutableStateOf(balance < totalIncome * 0.2) }
 
@@ -52,7 +67,8 @@ fun HomeScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .padding(top = 16.dp)
+            .verticalScroll(scrollState)
+            .padding(top = 16.dp, bottom = 24.dp)
     ) {
         // Başlık ve Bildirim
         Row(
@@ -185,11 +201,46 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Öneri kartı
-        EnhancedSuggestionCard(
-            suggestionText = suggestion,
+        // Akıllı Öneri
+        Column(
             modifier = Modifier.padding(horizontal = 24.dp)
-        )
+        ) {
+            Text(
+                text = "Akıllı Öneri",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            EnhancedSuggestionCard(
+                suggestionText = suggestion
+            )
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Harcama Analizi Bölümü
+        Column(
+            modifier = Modifier.padding(horizontal = 24.dp)
+        ) {
+            Text(
+                text = "Harcama Analizi",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            if (expenses.isNotEmpty()) {
+                // SpendingAnalyzer'dan pasta grafiği kullan
+                SpendingAnalyzer.ExpensePieChart(
+                    expenses = expenses,
+                    currencySymbol = currencySymbol
+                )
+            } else {
+                // SpendingAnalyzer'dan boş veri kartını kullan
+                SpendingAnalyzer.NoExpenseDataCard()
+            }
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -301,13 +352,15 @@ fun ActionButton(
 @Composable
 fun EnhancedSuggestionCard(
     suggestionText: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    containerColor: Color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.7f),
+    contentColor: Color = MaterialTheme.colorScheme.onTertiaryContainer
 ) {
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.7f)
+            containerColor = containerColor
         )
     ) {
         Column(
@@ -321,14 +374,14 @@ fun EnhancedSuggestionCard(
                     text = "💡 Akıllı Öneri",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onTertiaryContainer
+                    color = contentColor
                 )
             }
 
             Text(
                 text = suggestionText,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onTertiaryContainer
+                color = contentColor
             )
         }
     }
@@ -337,12 +390,41 @@ fun EnhancedSuggestionCard(
 @Composable
 fun AnalysisScreen(
     expenseViewModel: ExpenseViewModel,
-    incomeViewModel: IncomeViewModel
+    incomeViewModel: IncomeViewModel,
+    currencySymbol: String
 ) {
+
+    val expenses by expenseViewModel.allExpenses.collectAsState()
     val incomes by incomeViewModel.allIncomes.collectAsState()
+
     val suggestion = expenseViewModel.generateAISuggestion(incomes)
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState())
+    ) {
+        // Ana öneri
         EnhancedSuggestionCard(suggestionText = suggestion)
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Harcama analizi grafiği
+        Text(
+            text = "Harcama Dağılımı",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+
+        if (expenses.isNotEmpty()) {
+            SpendingAnalyzer.ExpensePieChart(
+                expenses = expenses,
+                currencySymbol = currencySymbol
+            )
+        } else {
+            SpendingAnalyzer.NoExpenseDataCard()
+        }
     }
 }
