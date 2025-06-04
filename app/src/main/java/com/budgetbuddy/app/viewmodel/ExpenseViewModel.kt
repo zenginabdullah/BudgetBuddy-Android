@@ -12,6 +12,9 @@ import javax.inject.Inject
 import com.google.firebase.auth.FirebaseAuth
 import com.budgetbuddy.app.data.local.entity.IncomeEntity
 import com.budgetbuddy.app.util.SpendingAnalyzer
+import android.content.Context
+import com.budgetbuddy.app.data.PreferencesManager
+import com.budgetbuddy.app.util.NotificationHelper
 
 
 @HiltViewModel
@@ -35,7 +38,19 @@ class ExpenseViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     init {
-        observeExpenses()
+        // 1. Firestore’daki kayıtları çek ve Room’u güncelle
+        viewModelScope.launch {
+            repository.syncAllExpensesFromFirebase()
+        }
+
+        // 2. Room’daki güncel listeyi dinle ve StateFlow’a aktar
+        viewModelScope.launch {
+            repository.getAllExpenses().collect { list ->
+                _allExpenses.value = list
+            }
+        }
+
+        // 3. Gelir toplamını güncelleyen fonksiyon varsa, onu da çağırabilirsiniz.
         updateTotalIncome()
     }
 
@@ -51,7 +66,13 @@ class ExpenseViewModel @Inject constructor(
         }
     }
 
-    fun insertExpense(amount: Double, category: String, description: String, date: String) {
+    fun insertExpense(
+        amount: Double,
+        category: String,
+        description: String,
+        date: String,
+        context: Context
+    ) {
         viewModelScope.launch {
             try {
                 val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return@launch
@@ -65,8 +86,18 @@ class ExpenseViewModel @Inject constructor(
                 )
                 repository.insertExpense(expense)
                 Log.d("ExpenseViewModel", "Expense inserted: $expense")
+
+                // 💥 Harcama limiti kontrolü
+                val prefs = PreferencesManager(context)
+                val todayExpenses: Double = repository.getTodayTotalExpense(date, uid) ?: 0.0
+                val dailyLimit: Double = prefs.getDailyLimit().toDouble()
+
+                if (dailyLimit > 0.0 && todayExpenses > dailyLimit) {
+                    NotificationHelper.showLimitExceededNotification(context, todayExpenses, dailyLimit)
+                }
+
             } catch (e: Exception) {
-                Log.e("ExpenseViewModel", "Insert failed: ${e.message}")
+                Log.e("ExpenseViewModel", "Insert failed: \${e.message}")
             }
         }
     }
@@ -95,5 +126,11 @@ class ExpenseViewModel @Inject constructor(
             expenses = _allExpenses.value,
             incomes = incomes
         )
+    }
+
+    fun addExpense(expense: ExpenseEntity) {
+        viewModelScope.launch {
+            repository.insertExpense(expense)
+        }
     }
 }

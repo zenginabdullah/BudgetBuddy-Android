@@ -8,10 +8,10 @@ import kotlinx.coroutines.flow.Flow
 interface IncomeDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertIncome(income: IncomeEntity)
+    suspend fun insertIncome(income: IncomeEntity) : Long
 
-    @Delete
-    suspend fun deleteIncome(income: IncomeEntity)
+    @Query("DELETE FROM incomes WHERE id = :incomeId")
+    suspend fun deleteIncomeById(incomeId: Int)
 
     @Query("SELECT * FROM incomes ORDER BY date DESC")
     fun getAllIncomes(): Flow<List<IncomeEntity>>

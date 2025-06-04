@@ -40,7 +40,7 @@ fun HistoryScreen(
     val selectedCategory by viewModel.selectedCategory.collectAsState()
     val totalExpense by viewModel.totalExpense.collectAsState()
 
-    val incomes by incomeViewModel.incomeList.collectAsState()
+    val incomes by incomeViewModel.allIncomes.collectAsState()
     val filteredIncomes by incomeViewModel.filteredIncomes.collectAsState()
     val totalIncome by incomeViewModel.totalIncome.collectAsState()
 
