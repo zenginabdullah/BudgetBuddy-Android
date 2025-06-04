@@ -69,7 +69,8 @@ class FirebaseDataSourceImpl : FirebaseDataSource {
                 amount = amount,
                 category = category,
                 description = description,
-                date = date
+                date = date,
+                userId = uid
             )
         }
     }
@@ -128,7 +129,8 @@ class FirebaseDataSourceImpl : FirebaseDataSource {
                 amount = amount,
                 category = category,
                 description = description,
-                date = date
+                date = date,
+                userId = uid
             )
         }
     }
