@@ -113,17 +113,7 @@ class MainActivity : ComponentActivity() {
                 // Burada API senkronizasyonu yapılabilir
             }
         }
-
-        // MonthlySummaryWorker test
-        val testRequest = OneTimeWorkRequestBuilder<MonthlySummaryWorker>()
-            .setInitialDelay(5, TimeUnit.SECONDS)
-            .build()
-
-        WorkManager.getInstance(applicationContext).enqueueUniqueWork(
-            "test_monthly_summary",
-            ExistingWorkPolicy.REPLACE,
-            testRequest
-        )
+        
 
         // UI başlat
         setContent {
