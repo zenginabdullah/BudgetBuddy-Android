@@ -80,7 +80,6 @@ class ExpenseViewModel @Inject constructor(
             try {
                 val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return@launch
 
-                // Harcama nesnesini oluştur
                 val expense = ExpenseEntity(
                     amount = amount,
                     category = category,
@@ -89,30 +88,27 @@ class ExpenseViewModel @Inject constructor(
                     userId = uid
                 )
 
-                // Harcamayı repository'ye ekle
                 repository.insertExpense(expense)
                 Log.d("ExpenseViewModel", "Expense inserted: $expense")
 
-                // 💥 Harcama limiti kontrolü
+                // ✅ Doğru sıralama: önce ekle, sonra kontrol et
                 val prefs = PreferencesManager(context)
                 val todayExpenses: Double = repository.getTodayTotalExpense(date, uid) ?: 0.0
                 val dailyLimit: Double = prefs.getDailyLimit().toDouble()
 
-                // Eğer günlük harcama limiti aşılmışsa, bildirim göster
-                if (dailyLimit > 0.0 && todayExpenses + amount > dailyLimit) {
-                    NotificationHelper.showLimitExceededNotification(context, todayExpenses + amount, dailyLimit)
+                if (dailyLimit > 0.0 && todayExpenses > dailyLimit) {
+                    NotificationHelper.showLimitExceededNotification(context, todayExpenses, dailyLimit)
                 }
 
-                // Eklenmiş gider sonrası toplam gideri logla
-                val currentExpenses = _allExpenses.value
-                val newTotal = currentExpenses.sumOf { it.amount } + amount
-                Log.d("ExpenseViewModel", "After insert - expected total expense: $newTotal")
+                // Log at
+                Log.d("ExpenseViewModel", "After insert - today total: $todayExpenses")
 
             } catch (e: Exception) {
                 Log.e("ExpenseViewModel", "Insert failed: ${e.message}")
             }
         }
     }
+
 
 
     fun deleteExpense(expense: ExpenseEntity) = viewModelScope.launch {
