@@ -26,8 +26,11 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.ExistingWorkPolicy
 import com.budgetbuddy.app.util.MonthlySummaryWorker
+import com.budgetbuddy.app.viewmodel.ChatBotViewModel
 import java.util.concurrent.TimeUnit
 import com.budgetbuddy.app.util.DailySummaryWorker
+import androidx.hilt.navigation.compose.hiltViewModel
+import java.util.Calendar
 
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -35,6 +38,31 @@ import dagger.hilt.android.AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Ayın 1'inde Worker'ı tetikleyecek iş
+        val monthlySummaryRequest = OneTimeWorkRequestBuilder<MonthlySummaryWorker>()
+            .setInitialDelay(calculateNextMonthStart(), TimeUnit.MILLISECONDS) // Ayın 1'ine kadar bekle
+            .build()
+
+        Log.d("WorkManager", "Scheduling WorkManager...") // Bu satırla log mesajı ekliyoruz
+
+        WorkManager.getInstance(applicationContext).enqueueUniqueWork(
+            "monthly_summary_worker",
+            ExistingWorkPolicy.REPLACE,
+            monthlySummaryRequest
+        )
+
+
+        // 📅 MonthlySummaryWorker test
+        val testRequest = OneTimeWorkRequestBuilder<MonthlySummaryWorker>()
+            .setInitialDelay(5, TimeUnit.SECONDS)
+            .build()
+
+        WorkManager.getInstance(applicationContext).enqueueUniqueWork(
+            "test_monthly_summary",
+            ExistingWorkPolicy.REPLACE,
+            testRequest
+        )
 
         // Konum izni kontrolü
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
@@ -103,6 +131,9 @@ class MainActivity : ComponentActivity() {
             val prefs = remember { PreferencesManager(context) }
             val navController = rememberNavController()
 
+            // ChatBotViewModel'i oluştur
+            val chatBotViewModel: ChatBotViewModel = hiltViewModel()
+
             var isDark by remember { mutableStateOf(prefs.isDarkModeEnabled()) }
             var currency by remember { mutableStateOf(prefs.getCurrency()) }
             var notificationsEnabled by remember { mutableStateOf(prefs.areNotificationsEnabled()) }
@@ -142,7 +173,8 @@ class MainActivity : ComponentActivity() {
                                     "Bildirimler devre dışı bırakıldı"
                                 )
                             }
-                        }
+                        },
+                        chatBotViewModel = chatBotViewModel
                     )
                 }
             }
@@ -166,6 +198,22 @@ class MainActivity : ComponentActivity() {
                 Log.d("Permissions", "Bildirim izni verildi.")
             }
         }
+    }
+    fun calculateNextMonthStart(): Long {
+        val calendar = Calendar.getInstance()
+        calendar.add(Calendar.MONTH, 1) // Gelecek ayı al
+        calendar.set(Calendar.DAY_OF_MONTH, 1) // Ayın 1'ini ayarla
+        calendar.set(Calendar.HOUR_OF_DAY, 9) // Sabah 9'u ayarla
+        calendar.set(Calendar.MINUTE, 0)
+        calendar.set(Calendar.SECOND, 0)
+
+        // Eğer şu anki tarih 9:00'dan sonra ise, bir sonraki ayın 1'ine al
+        if (calendar.before(Calendar.getInstance())) {
+            calendar.add(Calendar.MONTH, 1)
+        }
+
+        Log.d("WorkManager", "Next month start time: ${calendar.timeInMillis}") // Log mesajı ekledik
+        return calendar.timeInMillis - System.currentTimeMillis() // Gelecek ayın 1'ine kadar kalan süreyi hesapla
     }
 
 }
