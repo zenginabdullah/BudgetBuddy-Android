@@ -52,5 +52,10 @@ class ExpenseRepository(
         expenseDao.clearAllExpenses()
         remoteExpenses.forEach { expenseDao.insertExpense(it) }
     }
+
+    suspend fun getExpensesByDate(date: String, userId: String): List<ExpenseEntity> {
+        return expenseDao.getExpensesByDate(date, userId)
+    }
+
 }
 

@@ -1,58 +1,82 @@
 package com.budgetbuddy.app.util
 
-import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
-import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.ContextCompat
-import androidx.work.Worker
+import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.budgetbuddy.app.R
+import com.budgetbuddy.app.data.local.AppDatabase
+import com.budgetbuddy.app.data.remote.FirebaseDataSourceImpl
+import com.budgetbuddy.app.data.repository.ExpenseRepository
+import com.budgetbuddy.app.data.repository.IncomeRepository
+import com.google.firebase.auth.FirebaseAuth
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
-class DailySummaryWorker(context: Context, workerParams: WorkerParameters) :
-    Worker(context, workerParams) {
+class DailySummaryWorker(
+    context: Context,
+    workerParams: WorkerParameters
+) : CoroutineWorker(context, workerParams) {
 
-    override fun doWork(): Result {
-        val totalExpense = getTodaysTotalExpense() // Veritabanından çekilecek şekilde güncellenebilir
-        showNotification(totalExpense)
+    override suspend fun doWork(): Result {
+        val context = applicationContext
+        val database = AppDatabase.getInstance(context)
+
+        val firebaseDataSource = FirebaseDataSourceImpl()
+
+        val expenseRepo = ExpenseRepository(
+            database.expenseDao(),
+            database.incomeDao(),
+            firebaseDataSource
+        )
+
+        val incomeRepo = IncomeRepository(
+            database.incomeDao(),
+            firebaseDataSource
+        )
+
+        val formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
+        val today = LocalDate.now().format(formatter)
+        val userId = getCurrentUserId()
+
+        val expenses = expenseRepo.getExpensesByDate(today, userId)
+        val incomes = incomeRepo.getIncomesByDate(today, userId)
+
+        val totalExpense = expenses.sumOf { it.amount }
+        val totalIncome = incomes.sumOf { it.amount }
+
+        showSummaryNotification(context, totalIncome, totalExpense)
+
         return Result.success()
     }
 
-    private fun showNotification(totalExpense: Double) {
+    private fun showSummaryNotification(context: Context, income: Double, expense: Double) {
+        val notificationManager =
+            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val channelId = "daily_summary_channel"
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 channelId,
-                "Günlük Harcama Özeti",
+                "Gün Sonu Özeti",
                 NotificationManager.IMPORTANCE_DEFAULT
             )
-            val manager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            manager.createNotificationChannel(channel)
+            notificationManager.createNotificationChannel(channel)
         }
 
-        // Android 13+ için izin kontrolü
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-            ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.POST_NOTIFICATIONS)
-            != PackageManager.PERMISSION_GRANTED) {
-            return
-        }
-
-        val notification = NotificationCompat.Builder(applicationContext, channelId)
+        val builder = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle("Günlük Harcama Özeti")
-            .setContentText("Bugünkü toplam harcamanız: ₺%.2f".format(totalExpense))
+            .setContentTitle("📊 Gün Sonu Özeti")
+            .setContentText("Gelir: ₺%.2f | Gider: ₺%.2f".format(income, expense))
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .build()
 
-        NotificationManagerCompat.from(applicationContext).notify(1, notification)
+        notificationManager.notify(1002, builder.build())
     }
 
-    private fun getTodaysTotalExpense(): Double {
-        // Burada gün içindeki giderleri hesaplayacağız. Şu anlık sabit değer:
-        return 120.75
+    private fun getCurrentUserId(): String {
+        return FirebaseAuth.getInstance().currentUser?.uid ?: ""
     }
 }

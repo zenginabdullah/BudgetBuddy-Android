@@ -27,4 +27,8 @@ interface IncomeDao {
 
     @Query("SELECT * FROM incomes WHERE userId = :userId ORDER BY date DESC")
     fun getIncomesByUserId(userId: String): Flow<List<IncomeEntity>>
+
+    @Query("SELECT * FROM incomes WHERE date = :date AND userId = :userId")
+    suspend fun getIncomesByDate(date: String, userId: String): List<IncomeEntity>
+
 }
