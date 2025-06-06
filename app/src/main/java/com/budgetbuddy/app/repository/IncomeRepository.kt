@@ -39,4 +39,9 @@ class IncomeRepository(
         incomeDao.clearAllIncomes()
         remoteIncomes.forEach { incomeDao.insertIncome(it) }
     }
+
+    suspend fun getIncomesByDate(date: String, userId: String): List<IncomeEntity> {
+        return incomeDao.getIncomesByDate(date, userId)
+    }
+
 }

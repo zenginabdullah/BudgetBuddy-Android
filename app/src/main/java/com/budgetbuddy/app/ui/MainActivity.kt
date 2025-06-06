@@ -27,7 +27,7 @@ import androidx.work.WorkManager
 import androidx.work.ExistingWorkPolicy
 import com.budgetbuddy.app.util.MonthlySummaryWorker
 import java.util.concurrent.TimeUnit
-
+import com.budgetbuddy.app.util.DailySummaryWorker
 
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -36,7 +36,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // 🔐 Konum izni kontrolü
+        // Konum izni kontrolü
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
             != PackageManager.PERMISSION_GRANTED
         ) {
@@ -49,7 +49,7 @@ class MainActivity : ComponentActivity() {
             LocationAlertManager(this).startLocationCheck()
         }
 
-        // 🔔 Android 13+ için bildirim izni kontrolü
+        // Android 13+ için bildirim izni kontrolü
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
                 != PackageManager.PERMISSION_GRANTED
@@ -62,11 +62,22 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        // 📅 Bildirim planlayıcılar
-        NotificationScheduler.scheduleTestNotification(applicationContext)
+        // Günlük özet bildirimi planlayıcı
         NotificationScheduler.scheduleDailySummary(applicationContext)
 
-        // 🌐 Bağlantı durumu gözlemleyici
+        // TEST: Gün sonu özeti bildirimini 5 saniye sonra tetikle
+        val testDailySummaryRequest = OneTimeWorkRequestBuilder<DailySummaryWorker>()
+            .setInitialDelay(5, TimeUnit.SECONDS)
+            .build()
+
+        WorkManager.getInstance(applicationContext).enqueueUniqueWork(
+            "test_daily_summary_worker",
+            ExistingWorkPolicy.REPLACE,
+            testDailySummaryRequest
+        )
+
+
+        // Bağlantı durumu gözlemleyici
         val connectivityObserver = NetworkConnectivityObserver(applicationContext)
         lifecycleScope.launch {
             connectivityObserver.observe().collect { status ->
@@ -75,7 +86,7 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        // 📅 MonthlySummaryWorker test
+        // MonthlySummaryWorker test
         val testRequest = OneTimeWorkRequestBuilder<MonthlySummaryWorker>()
             .setInitialDelay(5, TimeUnit.SECONDS)
             .build()
@@ -86,7 +97,7 @@ class MainActivity : ComponentActivity() {
             testRequest
         )
 
-        // 🎨 UI başlat
+        // UI başlat
         setContent {
             val context = LocalContext.current
             val prefs = remember { PreferencesManager(context) }

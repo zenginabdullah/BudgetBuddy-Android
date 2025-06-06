@@ -33,4 +33,8 @@ interface ExpenseDao {
 
     @Query("SELECT SUM(amount) FROM expenses WHERE date = :date AND userId = :userId")
     suspend fun getTodayTotalExpense(date: String, userId: String): Double?
+
+    @Query("SELECT * FROM expenses WHERE date = :date AND userId = :userId")
+    suspend fun getExpensesByDate(date: String, userId: String): List<ExpenseEntity>
+
 }
